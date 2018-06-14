@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: debian:stretch
+    steps:
+      - checkout
+      - run:
+          name: Setup environment
+          command: apt update && apt install -y build-essential cmake libcap-dev libyaml-cpp-dev libboost-program-options-dev
+      - run:
+          name: Build
+          command: mkdir build && cd build && cmake .. && make
