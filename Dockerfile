@@ -1,0 +1,21 @@
+#
+# Copyright 2018 The cinit authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+FROM debian:stretch
+RUN apt update && apt install -y libyaml-cpp0.5v5 libboost-program-options1.62.0 libboost-log1.62.0 libboost-date-time1.62.0 libboost-system1.62.0 libboost-filesystem1.62.0 libboost-thread1.62.0 libboost-regex1.62.0 libboost-chrono1.62.0 libboost-atomic1.62.0 libcap2
+ADD . /app
+WORKDIR /app
+ENTRYPOINT ["/app/cmake-build-debug/cinit"]
