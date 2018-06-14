@@ -7,7 +7,6 @@ version: 2
 jobs:
   build:
     <<: *defaults
-    machine: true
     steps:
       - checkout
       - run:
@@ -22,12 +21,15 @@ jobs:
             - cinit
             - zombie
   smoke-test:
-    <<: *defaults
     machine: true
+    working_directory: /tmp/build
     steps:
       - checkout
       - attach_workspace:
           at: /tmp/build/build
+      - run:
+          name: Install runtime dependencies
+          command: sudo apt update && sudo apt install -y libyaml-cpp0.5v5 libboost-program-options1.62.0 libcap2
       - run:
           name: Run smoke test
           command: sudo .circleci/smoke-test.sh
