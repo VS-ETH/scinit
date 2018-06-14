@@ -29,3 +29,11 @@ jobs:
       - run:
           name: Run smoke test
           command: .circleci/smoke-test.sh
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - build
+      - smoke-test:
+          requires:
+            - build
