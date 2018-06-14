@@ -8,11 +8,12 @@ matrix:
       compiler: gcc
       addons:
        apt:
-         packages: &precise_latest_boost_packages
+         packages:
            - gcc-4.8
            - g++-4.8
            - valgrind
            - cmake
+           - libboost-all-dev
 install:
   - echo ${PATH}
   - echo ${CXX}

@@ -19,7 +19,7 @@ project(cinit)
 
 set(CMAKE_CXX_STANDARD 11)
 
-find_package(Boost 1.62 COMPONENTS program_options REQUIRED)
+find_package(Boost 1.54 COMPONENTS program_options REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(3rdparty/spdlog/include)
 
