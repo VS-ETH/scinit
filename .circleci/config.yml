@@ -1,5 +1,5 @@
 defaults: &defaults
-  working_directory: /tmp
+  working_directory: /tmp/build
   docker:
     - image: uubk/cinit-build:latest
 
@@ -25,7 +25,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /tmp/build
+          at: /tmp/build/build
       - run:
           name: Run smoke test
           command: .circleci/smoke-test.sh
