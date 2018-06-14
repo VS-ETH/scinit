@@ -14,7 +14,7 @@ jobs:
           command: git submodule update --init
       - run:
           name: build
-          command: mkdir build && cd build && cmake .. && make
+          command: mkdir build && cd build && cmake .. && make -j4
       - persist_to_workspace:
           root: build
           paths:
@@ -28,7 +28,7 @@ jobs:
           at: /tmp/build/build
       - run:
           name: Run smoke test
-          command: .circleci/smoke-test.sh
+          command: sudo .circleci/smoke-test.sh
 workflows:
   version: 2
   build-and-test:
