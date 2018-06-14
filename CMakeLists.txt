@@ -14,14 +14,14 @@
 # limitations under the License.
 #
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 2.8)
 project(cinit)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
 find_package(Boost 1.62 COMPONENTS program_options REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
-include_directories(spdlog/include)
+include_directories(3rdparty/spdlog/include)
 
 # Main executable
 add_executable(cinit main.cpp ChildProcess.cpp ChildProcess.h Config.cpp Config.h ConfigParseException.cpp log.h ChildProcessException.cpp ChildProcessException.h)

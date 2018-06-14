@@ -15,7 +15,8 @@
 #
 
 FROM debian:stretch
-RUN apt update && apt install -y libyaml-cpp0.5v5 libboost-program-options1.62.0 libboost-log1.62.0 libboost-date-time1.62.0 libboost-system1.62.0 libboost-filesystem1.62.0 libboost-thread1.62.0 libboost-regex1.62.0 libboost-chrono1.62.0 libboost-atomic1.62.0 libcap2
+RUN apt update && apt install -y libyaml-cpp0.5v5 libboost-program-options1.62.0 libcap2
 ADD . /app
 WORKDIR /app
-ENTRYPOINT ["/app/cmake-build-debug/cinit"]
+RUN cp /bin/ping /app
+ENTRYPOINT ["/app/build/cinit"]
