@@ -1,13 +1,31 @@
+defaults: &defaults
+  working_directory: /tmp
+  docker:
+    - image: uubk/cinit-build:latest
+
 version: 2
 jobs:
   build:
-    docker:
-      - image: uubk/cinit-build:latest
+    <<: *defaults
     steps:
       - checkout
       - run:
-          name: Checkout submodules
+          name: checkout submodules
           command: git submodule update --init
       - run:
-          name: Build
+          name: build
           command: mkdir build && cd build && cmake .. && make
+      - persist_to_workspace:
+          root: build
+          paths:
+            - cinit
+            - zombie
+  smoke-test:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/build
+      - run:
+          name: Run smoke test
+          command: .circleci/smoke-test.sh
