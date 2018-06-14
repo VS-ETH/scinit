@@ -14,6 +14,8 @@ matrix:
            - valgrind
            - cmake
            - libboost-all-dev
+           - libyaml-cpp-dev
+           - libcap-dev
 install:
   - echo ${PATH}
   - echo ${CXX}

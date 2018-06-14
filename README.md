@@ -1,5 +1,6 @@
 # cinit
 [![Build Status](https://travis-ci.org/uubk/cinit.svg?branch=master)](https://travis-ci.org/uubk/cinit)
+
 A small init daemon for containers. Supervises multiple processes (optionally restarting them), forwards signals and handles capabilities.
 
 ## Why would I need this?
