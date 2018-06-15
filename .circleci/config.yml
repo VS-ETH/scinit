@@ -15,11 +15,18 @@ jobs:
       - run:
           name: build
           command: mkdir build && cd build && cmake .. && make -j4
+      - run:
+          name: extract Debian 9 libs for ubuntu 14.04 testrunner
+          command: |
+            cp /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.62.0 /tmp/build/build && \
+            cp /lib/x86_64-linux-gnu/libcap.so.2.25 /tmp/build/build
       - persist_to_workspace:
           root: build
           paths:
             - cinit
             - zombie
+            - libcap.so.2.25
+            - libboost_program_options.so.1.62.0
   smoke-test:
     machine: true
     working_directory: /tmp/build
@@ -29,7 +36,10 @@ jobs:
           at: /tmp/build/build
       - run:
           name: Install runtime dependencies
-          command: sudo apt update && sudo apt install -y libyaml-cpp0.5v5 libboost-program-options1.62.0 libcap2
+          command: sudo apt update && sudo apt install -y libyaml-cpp0.5
+      - run:
+          name: Symlink libcap
+          command: cd build && ln -s libcap.so.2.25 libcap.so.2
       - run:
           name: Run smoke test
           command: sudo .circleci/smoke-test.sh
