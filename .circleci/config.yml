@@ -30,6 +30,7 @@ jobs:
             - libcap.so.2.25
             - libboost_program_options.so.1.62.0
             - libstdc++.so.6.0.22
+            - libyaml-cpp.so.0.5.2
   smoke-test:
     machine: true
     working_directory: /tmp/build
