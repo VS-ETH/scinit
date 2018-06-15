@@ -19,5 +19,8 @@ echo "Checking failping output"
 cat log.txt | grep '\[failping\]' >> /dev/null
 echo "ok"
 echo "Checking detailed failping output"
-cat log.txt | grep '\[failping\]' | grep 'ping: socket: Operation not permitted' >> /dev/null
+# Debian 9:
+# cat log.txt | grep '\[failping\]' | grep 'ping: socket: Operation not permitted' >> /dev/null
+# Ubuntu 14.04 with swapped kernel:
+cat log.txt | grep '\[failping\]' | grep 'ping: icmp open socket: Operation not permitted' >> /dev/null
 echo "ok"
