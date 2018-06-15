@@ -19,7 +19,8 @@ jobs:
           name: extract Debian 9 libs for ubuntu 14.04 testrunner
           command: |
             cp /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.62.0 /tmp/build/build && \
-            cp /lib/x86_64-linux-gnu/libcap.so.2.25 /tmp/build/build
+            cp /lib/x86_64-linux-gnu/libcap.so.2.25 /tmp/build/build && \
+            cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.22 /tmp/build/build
       - persist_to_workspace:
           root: build
           paths:
@@ -27,6 +28,7 @@ jobs:
             - zombie
             - libcap.so.2.25
             - libboost_program_options.so.1.62.0
+            - libstdc++.so.6.0.22
   smoke-test:
     machine: true
     working_directory: /tmp/build
@@ -38,8 +40,10 @@ jobs:
           name: Install runtime dependencies
           command: sudo apt update && sudo apt install -y libyaml-cpp0.5
       - run:
-          name: Symlink libcap
-          command: cd build && ln -s libcap.so.2.25 libcap.so.2
+          name: Symlink libs
+          command: |
+            cd build && ln -s libcap.so.2.25 libcap.so.2 && \
+            cp libstdc++.so.6.0.22 libstdc++.so.6
       - run:
           name: Run smoke test
           command: sudo .circleci/smoke-test.sh
