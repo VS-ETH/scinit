@@ -3,6 +3,8 @@
 export LANG=C
 set -e
 
+cp /bin/ping .
+
 LD_LIBRARY_PATH="$(pwd)/build" build/cinit | tee log.txt
 
 echo "Checking ping output"
