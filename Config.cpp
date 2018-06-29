@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The cinit authors
+ * Copyright 2018 The scinit authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 
 namespace po = boost::program_options;
 
-namespace cinit {
+namespace scinit {
 
     Config::Config(const std::string &path) noexcept(false) {
         this->src = path;
@@ -105,14 +105,14 @@ namespace cinit {
             exit(0);
         }
 
-        auto console = spdlog::stdout_color_st("cinit");
+        auto console = spdlog::stdout_color_st("scinit");
         console->set_pattern("[%^%n%$] [%H:%M:%S.%e] [%l] %v");
         if (options["verbose"].as<bool>())
             console->set_level(spdlog::level::debug);
         else
             console->set_level(spdlog::level::info);
 
-        return new cinit::Config(options["config"].as<std::string>());
+        return new scinit::Config(options["config"].as<std::string>());
     }
 
 }

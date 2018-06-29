@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The cinit authors
+ * Copyright 2018 The scinit authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 #include "ChildProcess.h"
 #include "ConfigParseException.h"
 
-namespace cinit {
+namespace scinit {
     class Config {
     public:
         Config(const std::string &path) noexcept(false);

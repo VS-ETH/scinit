@@ -5,7 +5,7 @@ set -e
 
 cp /bin/ping .
 
-LD_LIBRARY_PATH="$(pwd)/build" build/cinit | tee log.txt
+LD_LIBRARY_PATH="$(pwd)/build" build/scinit | tee log.txt
 
 echo "Checking ping output"
 cat log.txt | grep '\[ping\]' >> /dev/null

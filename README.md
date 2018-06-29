@@ -1,4 +1,4 @@
-# cinit
+# scinit
 [![CircleCI](https://circleci.com/gh/uubk/cinit/tree/master.svg?style=shield)](https://circleci.com/gh/uubk/cinit/tree/master)
 
 A small init daemon for containers. Supervises multiple processes (optionally restarting them), forwards signals and handles capabilities.

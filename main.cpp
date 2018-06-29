@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The cinit authors
+ * Copyright 2018 The scinit authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@
 #define BUF_SIZE 4096
 
 int main(int argc, char** argv) {
-    auto conf = cinit::handle_commandline_invocation(argc, argv);
+    auto conf = scinit::handle_commandline_invocation(argc, argv);
     auto procs = conf->getProcesses();
-    std::map<int, std::shared_ptr<cinit::ChildProcess>> fd_to_object;
-    std::map<int, std::shared_ptr<cinit::ChildProcess>> pid_to_object;
-    std::list<std::shared_ptr<cinit::ChildProcess>> processes_to_restart;
+    std::map<int, std::shared_ptr<scinit::ChildProcess>> fd_to_object;
+    std::map<int, std::shared_ptr<scinit::ChildProcess>> pid_to_object;
+    std::list<std::shared_ptr<scinit::ChildProcess>> processes_to_restart;
     int number_of_running_procs = 0;
     bool should_quit = false;
 
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
 
         // Are there processes to restart?
         if (!should_quit) {
-            std::list<std::shared_ptr<cinit::ChildProcess>> processes_restarted;
+            std::list<std::shared_ptr<scinit::ChildProcess>> processes_restarted;
             for (auto &program : processes_to_restart) {
                 try {
                     if (program->should_restart_now()) {
@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
                         number_of_running_procs++;
                         processes_restarted.push_back(program);
                     }
-                } catch (cinit::ChildProcessException &error) {
+                } catch (scinit::ChildProcessException &error) {
                     LOG->critical("Couldn't restart process: {0}, aborting!", error.what());
                     return -1;
                 }

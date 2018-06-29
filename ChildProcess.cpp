@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The cinit authors
+ * Copyright 2018 The scinit authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 #include "ChildProcess.h"
 #include "ChildProcessException.h"
 
-namespace cinit {
+namespace scinit {
 
     ChildProcess::ChildProcess(const std::string &name, const std::string &path, const std::list<std::string>& args,
                                const std::string &type, const std::list<std::string> &capabilities, int uid, int gid) :
@@ -102,7 +102,7 @@ namespace cinit {
         }
     }
 
-    void ChildProcess::do_fork(std::map<int, std::shared_ptr<cinit::ChildProcess>>& reg) noexcept(false) {
+    void ChildProcess::do_fork(std::map<int, std::shared_ptr<scinit::ChildProcess>>& reg) noexcept(false) {
         if (state != READY)
             throw ChildProcessException("Process not ready, cannot fork now!");
 

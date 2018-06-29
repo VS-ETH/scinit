@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The cinit authors
+ * Copyright 2018 The scinit authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@
 #include <list>
 #include <map>
 
-namespace cinit {
+namespace scinit {
 
     class ChildProcess : public std::enable_shared_from_this<ChildProcess> {
     public:
         ChildProcess(const std::string&, const std::string &, const std::list<std::string> &,
                         const std::string &, const std::list<std::string> &, int uid, int gid);
-        void do_fork(std::map<int, std::shared_ptr<cinit::ChildProcess>>&) noexcept(false);
+        void do_fork(std::map<int, std::shared_ptr<scinit::ChildProcess>>&) noexcept(false);
         int register_with_epoll(int, std::map<int, std::shared_ptr<ChildProcess>>&) noexcept(false);
         std::string get_name() const noexcept;
         bool should_restart() const noexcept;

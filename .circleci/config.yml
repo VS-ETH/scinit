@@ -1,7 +1,7 @@
 defaults: &defaults
   working_directory: /tmp/build
   docker:
-    - image: uubk/cinit-build:latest
+    - image: uubk/scinit-build:latest
 
 version: 2
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - persist_to_workspace:
           root: build
           paths:
-            - cinit
+            - scinit
             - zombie
             - libcap.so.2.25
             - libboost_program_options.so.1.62.0
