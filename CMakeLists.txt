@@ -1,5 +1,5 @@
 #
-# Copyright 2018 The cinit authors
+# Copyright 2018 The scinit authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ include_directories(${Boost_INCLUDE_DIR})
 include_directories(3rdparty/spdlog/include)
 
 # Main executable
-add_executable(cinit main.cpp ChildProcess.cpp ChildProcess.h Config.cpp Config.h ConfigParseException.cpp log.h ChildProcessException.cpp ChildProcessException.h)
-target_link_libraries(cinit yaml-cpp pthread cap ${Boost_LIBRARIES})
+add_executable(scinit main.cpp ChildProcess.cpp ChildProcess.h Config.cpp Config.h ConfigParseException.cpp log.h ChildProcessException.cpp ChildProcessException.h)
+target_link_libraries(scinit yaml-cpp pthread cap ${Boost_LIBRARIES})
 
 # Test executables
 add_executable(zombie test_programs/zombie.cpp)
