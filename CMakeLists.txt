@@ -23,9 +23,8 @@ find_package(Boost 1.62 COMPONENTS program_options filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(3rdparty/spdlog/include)
 
-# Main executable
-add_executable(scinit main.cpp ChildProcess.cpp ChildProcess.h Config.cpp Config.h ConfigParseException.cpp log.h ChildProcessException.cpp ChildProcessException.h)
-target_link_libraries(scinit yaml-cpp pthread cap ${Boost_LIBRARIES})
+# Main source
+add_subdirectory(src)
 
-# Test executables
-add_executable(zombie test_programs/zombie.cpp)
+# Tests
+add_subdirectory(test)
