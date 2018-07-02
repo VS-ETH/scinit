@@ -50,6 +50,10 @@ jobs:
             ln -s libstdc++.so.6.0.22 libstdc++.so.6 && \
             ln -s libyaml-cpp.so.0.5.2 libyaml-cpp.so.0.5
       - run:
+          name: Load smoke test config
+          command: |
+            cp .circleci/smoke-test-config.yml config.yml
+      - run:
           name: Run smoke test
           command: sudo .circleci/smoke-test.sh
 workflows:
