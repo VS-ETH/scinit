@@ -24,7 +24,7 @@ jobs:
             cp /lib/x86_64-linux-gnu/libcap.so.2.25 /tmp/build/build && \
             cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.22 /tmp/build/build && \
             cp /usr/lib/x86_64-linux-gnu/libyaml-cpp.so.0.5.2 /tmp/build/build && \
-            cd /tmp/build && mv test/zombie . && mv src/scinit .
+            cd /tmp/build/build && mv test/zombie . && mv src/scinit .
       - persist_to_workspace:
           root: build
           paths:
