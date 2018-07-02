@@ -19,6 +19,8 @@ jobs:
           name: extract Debian 9 libs for ubuntu 14.04 testrunner
           command: |
             cp /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.62.0 /tmp/build/build && \
+            cp /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.62.0 /tmp/build/build && \
+            cp /usr/lib/x86_64-linux-gnu/libboost_system.so.1.62.0 /tmp/build/build && \
             cp /lib/x86_64-linux-gnu/libcap.so.2.25 /tmp/build/build && \
             cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.22 /tmp/build/build && \
             cp /usr/lib/x86_64-linux-gnu/libyaml-cpp.so.0.5.2 /tmp/build/build
@@ -29,6 +31,8 @@ jobs:
             - zombie
             - libcap.so.2.25
             - libboost_program_options.so.1.62.0
+            - libboost_system.so.1.62.0
+            - libboost_filesystem.so.1.62.0
             - libstdc++.so.6.0.22
             - libyaml-cpp.so.0.5.2
   smoke-test:

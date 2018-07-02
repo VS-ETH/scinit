@@ -29,6 +29,8 @@
 
 int main(int argc, char** argv) {
     auto conf = scinit::handle_commandline_invocation(argc, argv);
+    if (conf == nullptr)
+        return -1;
     auto procs = conf->getProcesses();
     std::map<int, std::shared_ptr<scinit::ChildProcess>> fd_to_object;
     std::map<int, std::shared_ptr<scinit::ChildProcess>> pid_to_object;

@@ -16,34 +16,41 @@
 
 #include <yaml-cpp/yaml.h>
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include "Config.h"
 #include "ConfigParseException.h"
 #include "log.h"
 
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 namespace scinit {
 
     Config::Config(const std::string &path) noexcept(false) {
-        this->src = path;
-        initialize();
+        loadFile(path);
+        LOG->info("Config loaded");
     }
 
-    void Config::initialize() noexcept(false) {
-        root = YAML::LoadFile(src);
+    Config::Config(const std::list<std::string> &files) noexcept(false) {
+        for (auto file : files) {
+            loadFile(file);
+        }
+        LOG->info("Config loaded");
+    }
+
+    void Config::loadFile(const std::string& file) noexcept(false) {
+        auto root = YAML::LoadFile(file);
 
         if (!root["programs"])
             throw ConfigParseException("Config file is missing the 'programs' node!");
 
-        LOG->info("Config loaded");
         LOG->debug("Dump\n{0}", root);
+        parseFile(root);
     }
 
-    std::list<std::shared_ptr<ChildProcess>> Config::getProcesses() const noexcept {
-        std::list<std::shared_ptr<ChildProcess>> results;
-
-        YAML::Node programs = root["programs"];
+    void Config::parseFile(const YAML::Node & rootNode) noexcept(false) {
+        YAML::Node programs = rootNode["programs"];
         for (auto program = programs.begin(); program != programs.end(); program++) {
             if (!(*program)["name"]) {
                 LOG->warn("Program entry has no name, skipping!");
@@ -82,11 +89,13 @@ namespace scinit {
                 uid = (*program)["gid"].as<int>();
             }
 
-            results.push_back(std::make_shared<ChildProcess>((*program)["name"].as<std::string>(),
-                    (*program)["path"].as<std::string>(), arg_list, type, capabilities, uid, gid));
+            processes.push_back(std::make_shared<ChildProcess>((*program)["name"].as<std::string>(),
+                                                             (*program)["path"].as<std::string>(), arg_list, type, capabilities, uid, gid));
         }
+    }
 
-        return results;
+    std::list<std::shared_ptr<ChildProcess>> Config::getProcesses() const noexcept {
+        return processes;
     }
 
     Config* handle_commandline_invocation(int argc, char** argv) noexcept(false) {
@@ -112,7 +121,23 @@ namespace scinit {
         else
             console->set_level(spdlog::level::info);
 
-        return new scinit::Config(options["config"].as<std::string>());
+        auto config = options["config"].as<std::string>();
+        // Check whether 'config' is a file or a directory
+        fs::path config_path(config);
+        if (!fs::exists(config_path)) {
+            LOG->critical("Config file '{0}' does not exist, aborting!", config);
+            return nullptr;
+        }
+        if (fs::is_directory(config_path)) {
+            std::list<std::string> files;
+            for (auto& file : fs::directory_iterator(config_path)) {
+                if (fs::is_regular(file))
+                    files.push_back(file.path().native());
+            }
+            return new scinit::Config(files);
+        } else {
+            return new scinit::Config(config);
+        }
     }
 
 }

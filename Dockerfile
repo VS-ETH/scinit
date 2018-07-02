@@ -15,8 +15,8 @@
 #
 
 FROM debian:stretch
-RUN apt update && apt install -y libyaml-cpp0.5v5 libboost-program-options1.62.0 libcap2
+RUN apt update && apt install -y libyaml-cpp0.5v5 libboost-program-options1.62.0 libboost-filesystem1.62.0 libcap2
 ADD . /app
 WORKDIR /app
 RUN cp /bin/ping /app
-ENTRYPOINT ["/app/build/cinit"]
+ENTRYPOINT ["/app/build/scinit"]
