@@ -19,18 +19,32 @@ jobs:
           name: extract Debian 9 libs for ubuntu 14.04 testrunner
           command: |
             cp /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.62.0 /tmp/build/build && \
+            cp /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.62.0 /tmp/build/build && \
+            cp /usr/lib/x86_64-linux-gnu/libboost_system.so.1.62.0 /tmp/build/build && \
             cp /lib/x86_64-linux-gnu/libcap.so.2.25 /tmp/build/build && \
             cp /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.22 /tmp/build/build && \
-            cp /usr/lib/x86_64-linux-gnu/libyaml-cpp.so.0.5.2 /tmp/build/build
+            cp /usr/lib/x86_64-linux-gnu/libyaml-cpp.so.0.5.2 /tmp/build/build && \
+            cd /tmp/build/build && mv test/zombie . && mv src/scinit .
       - persist_to_workspace:
           root: build
           paths:
-            - scinit
-            - zombie
-            - libcap.so.2.25
-            - libboost_program_options.so.1.62.0
-            - libstdc++.so.6.0.22
-            - libyaml-cpp.so.0.5.2
+            - "*"
+  unit-tests:
+      <<: *defaults
+      steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/build/build
+      - run:
+          name: Run unittests
+          command: |
+            mkdir unittests && \
+            mkdir unittests/config-test && \
+            cd build && \
+            ctest -T Test --output-on-failure || /bin/true && \
+            xsltproc ../3rdparty/transform-test.xslt Testing/2*/*.xml > ../unittests/config-test/test.xml
+      - store_test_results:
+          path: /tmp/build/unittests
   smoke-test:
     machine: true
     working_directory: /tmp/build
@@ -45,6 +59,10 @@ jobs:
             ln -s libstdc++.so.6.0.22 libstdc++.so.6 && \
             ln -s libyaml-cpp.so.0.5.2 libyaml-cpp.so.0.5
       - run:
+          name: Load smoke test config
+          command: |
+            cp .circleci/smoke-test-config.yml config.yml
+      - run:
           name: Run smoke test
           command: sudo .circleci/smoke-test.sh
 workflows:
@@ -52,6 +70,9 @@ workflows:
   build-and-test:
     jobs:
       - build
+      - unit-tests:
+          requires:
+            - build
       - smoke-test:
           requires:
             - build

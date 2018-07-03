@@ -1,5 +1,5 @@
 #
-# Copyright 2018 The cinit authors
+# Copyright 2018 The scinit authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,7 @@
 # limitations under the License.
 #
 
-FROM debian:stretch
-RUN apt update && apt install -y libyaml-cpp0.5v5 libboost-program-options1.62.0 libcap2
-ADD . /app
-WORKDIR /app
-RUN cp /bin/ping /app
-ENTRYPOINT ["/app/build/cinit"]
+# Main executable
+add_executable(scinit main.cpp ${SCINIT_SOURCE_FILES})
+# Link gtest. We won't use any symbols but the dependency makes the includes available...
+target_link_libraries(scinit yaml-cpp pthread cap gtest_main ${Boost_LIBRARIES})

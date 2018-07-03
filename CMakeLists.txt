@@ -18,14 +18,28 @@ cmake_minimum_required(VERSION 3.7.2)
 project(cinit)
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake)
+include(GoogleTest)
+enable_testing()
 
-find_package(Boost 1.62 COMPONENTS program_options REQUIRED)
+find_package(Boost 1.62 COMPONENTS program_options filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(3rdparty/spdlog/include)
 
-# Main executable
-add_executable(scinit main.cpp ChildProcess.cpp ChildProcess.h Config.cpp Config.h ConfigParseException.cpp log.h ChildProcessException.cpp ChildProcessException.h)
-target_link_libraries(scinit yaml-cpp pthread cap ${Boost_LIBRARIES})
+set(SCINIT_SOURCE_FILES ChildProcess.cpp ChildProcess.h Config.cpp Config.h ConfigParseException.cpp log.h
+        ChildProcessException.cpp ChildProcessException.h)
+# Absolute paths are a lot easier to use in test targets from another subdirectory...
+foreach(source ${SCINIT_SOURCE_FILES})
+    list(APPEND ABS_SCINIT_SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/${source})
+endforeach()
 
-# Test executables
-add_executable(zombie test_programs/zombie.cpp)
+# Add GTest here, since we need 'gtest_prod.h' in src/
+add_subdirectory(3rdparty/googletest gtest-build EXCLUDE_FROM_ALL)
+target_include_directories(gmock_main SYSTEM BEFORE INTERFACE
+        "${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
+
+# Main source
+add_subdirectory(src)
+
+# Tests
+add_subdirectory(test)

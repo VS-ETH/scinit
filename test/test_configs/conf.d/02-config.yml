@@ -1,0 +1,7 @@
+programs:
+  - name: failping
+    path: ./ping
+    args:
+      - -c 4
+      - google.ch
+    type: oneshot

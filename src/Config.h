@@ -28,13 +28,13 @@ namespace scinit {
     class Config {
     public:
         Config(const std::string &path) noexcept(false);
+        Config(const std::list<std::string> &files) noexcept(false);
         std::list<std::shared_ptr<ChildProcess>> getProcesses() const noexcept;
 
     private:
-        void initialize() noexcept(false);
-
-        std::string src;
-        YAML::Node root;
+        void loadFile(const std::string& file) noexcept(false);
+        void parseFile(const YAML::Node & rootNode);
+        std::list<std::shared_ptr<ChildProcess>> processes;
     };
 
     Config* handle_commandline_invocation(int argc, char** argv) noexcept(false);
