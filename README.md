@@ -31,3 +31,9 @@ programs:
       - CAP_NET_RAW
 ```
 This would start a `./ping -c 4 google.ch` a single time (`type: onshot`) as `nobody:nogroup` and grant it `CAP_NET_RAW` so that it works without root privileges. The only mandatory options from this example are `name` and `path`.
+
+## Dependencies
+This project depends on gtest+gmock and spdlog, which are pulled in via submodule.
+Additionally, CMake's `GoogleTest` module is included for compatibility with earlier
+CMake versions. To make unit test results appear in CircleCI, this project relies on the XSLT
+from [https://stackoverflow.com/a/6329217](https://stackoverflow.com/a/6329217).

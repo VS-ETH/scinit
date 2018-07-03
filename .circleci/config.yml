@@ -36,6 +36,21 @@ jobs:
             - libboost_filesystem.so.1.62.0
             - libstdc++.so.6.0.22
             - libyaml-cpp.so.0.5.2
+  unit-tests:
+      <<: *defaults
+      steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/build/build
+      - run:
+          name: Run unittests
+          command: |
+            mkdir unittests && \
+            cd build && \
+            ctest -T Test --output-on-failure || /bin/true && \
+            xsltproc ../3rdparty/transform-test.xslt Testing/2*/*.xml > ../unittests/test.xml
+      - store_test_results:
+          path: /tmp/build/unittests
   smoke-test:
     machine: true
     working_directory: /tmp/build
@@ -61,6 +76,9 @@ workflows:
   build-and-test:
     jobs:
       - build
+      - unit-tests:
+          requires:
+            - build
       - smoke-test:
           requires:
             - build

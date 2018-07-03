@@ -28,6 +28,8 @@ namespace fs = boost::filesystem;
 namespace scinit {
 
     Config::Config(const std::string &path) noexcept(false) {
+        if (fs::is_directory(fs::path(path)))
+            throw ConfigParseException("This constructor is for single files only!");
         loadFile(path);
         LOG->info("Config loaded");
     }

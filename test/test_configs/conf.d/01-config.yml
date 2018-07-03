@@ -1,0 +1,9 @@
+programs:
+  - name: ping
+    path: ./ping
+    args:
+      - -c 4
+      - google.ch
+    type: oneshot
+    capabilities:
+      - CAP_NET_RAW

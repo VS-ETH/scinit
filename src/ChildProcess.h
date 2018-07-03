@@ -20,6 +20,7 @@
 #include <string>
 #include <list>
 #include <map>
+#include "gtest/gtest_prod.h"
 
 namespace scinit {
 
@@ -57,6 +58,9 @@ namespace scinit {
         ProcessState state;
 
         void handle_caps();
+
+        FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
+        FRIEND_TEST(ConfigParserTests, SimpleConfDTest);
     };
 }
 
