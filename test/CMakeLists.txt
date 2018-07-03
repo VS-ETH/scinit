@@ -20,5 +20,5 @@ add_executable(zombie test_programs/zombie.cpp)
 # Config unit tests
 add_executable(config_tests ${ABS_SCINIT_SOURCE_FILES} test_config_parser.cpp)
 target_link_libraries(config_tests yaml-cpp pthread cap gmock_main ${Boost_LIBRARIES})
-
+# Make unit tests available to 'make test'
 gtest_add_tests(TARGET config_tests SOURCES test_config_parser.cpp)
