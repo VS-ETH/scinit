@@ -39,9 +39,10 @@ jobs:
           name: Run unittests
           command: |
             mkdir unittests && \
+            mkdir unittests/config-test && \
             cd build && \
             ctest -T Test --output-on-failure || /bin/true && \
-            xsltproc ../3rdparty/transform-test.xslt Testing/2*/*.xml > ../unittests/test.xml
+            xsltproc ../3rdparty/transform-test.xslt Testing/2*/*.xml > ../unittests/config-test/test.xml
       - store_test_results:
           path: /tmp/build/unittests
   smoke-test:
