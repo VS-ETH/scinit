@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-#ifndef CINIT_CONFIG_PARSE_EXCEPTION_H
-#define CINIT_CONFIG_PARSE_EXCEPTION_H
-
-#include <exception>
+#include "ProcessHandlerException.h"
 
 namespace scinit {
-    class ConfigParseException : virtual std::exception {
-    public:
-        explicit ConfigParseException(const char* reason) noexcept;
-        const char* what() const noexcept override;
+    ProcessHandlerException::ProcessHandlerException(const char* what) noexcept {
+        this->reason = std::string(what);
+    }
 
-    private:
-        std::string reason;
-    };
+    ProcessHandlerException::ProcessHandlerException() noexcept {
+        this->reason = std::string();
+    }
+
+    const char* ProcessHandlerException::what() const noexcept {
+        return this->reason.c_str();
+    }
 }
-
-
-#endif //CINIT_CONFIG_PARSE_EXCEPTION_H

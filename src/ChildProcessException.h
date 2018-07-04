@@ -22,13 +22,12 @@
 namespace scinit {
     class ChildProcessException : virtual std::exception {
     public:
-        ChildProcessException(const char* reason) noexcept;
-        const char* what() const noexcept;
+        explicit ChildProcessException(const char* reason) noexcept;
+        const char* what() const noexcept override;
 
     private:
         std::string reason;
     };
 }
-
 
 #endif //CINIT_CHILDPROCESSEXCEPTION_H
