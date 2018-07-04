@@ -18,6 +18,7 @@
 #define CINIT_PROCESSHANDLER_H
 
 #include "ProcessHandlerInterface.h"
+#include "gtest/gtest_prod.h"
 
 namespace scinit {
     // See base class for documentation
@@ -40,9 +41,16 @@ namespace scinit {
         std::map<int, int> id_for_fd;
         std::list<std::shared_ptr<ChildProcessInterface>> all_objs;
         int epoll_fd = -1, signal_fd = -1 , number_of_running_procs = 0;
+        bool should_quit = false;
 
         void setup_signal_handlers();
         void start_programs();
+        void event_received(int fd, unsigned int event);
+        void signal_received(int signal);
+        void sigchld_received(int pid, int rc);
+
+        FRIEND_TEST(ProcessHandlerTests, TestOneRunnableChild);
+        FRIEND_TEST(ProcessHandlerTests, TestOneChildLifecycle);
     };
 }
 

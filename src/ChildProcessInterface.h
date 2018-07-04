@@ -30,29 +30,29 @@ namespace scinit {
         virtual ChildProcessInterface& operator=(const ChildProcessInterface&) = delete;
 
         // Fork, and register the pid to the current object
-        virtual void do_fork(std::map<int, int>&) noexcept(false) = 0;
+        virtual void do_fork(std::map<int, int>&) = 0;
 
-        virtual std::string get_name() const noexcept = 0;
-        virtual unsigned int get_id() const noexcept = 0;
-        virtual bool can_start_now() const noexcept = 0;
+        virtual std::string get_name() const = 0;
+        virtual unsigned int get_id() const = 0;
+        virtual bool can_start_now() const = 0;
 
         /*
          * In order to handle stdout/stderr forwarding, the pipe needs to be registered with epoll,
          * which is what this function does. It also registers the fd to the current object.
          */
-        virtual int register_with_epoll(int epollfd, std::map<int, int>& fd_to_obj) noexcept(false) = 0;
+        virtual int register_with_epoll(int epollfd, std::map<int, int>& fd_to_obj) = 0;
 
         /*
          * This function is called by the process handler with a list of all existing processes as an argument.
          * It is supposed to advance the internal state machine.
          */
-        virtual void notify_of_state(std::list<std::shared_ptr<ChildProcessInterface>>) noexcept = 0;
+        virtual void notify_of_state(std::list<std::shared_ptr<ChildProcessInterface>>) = 0;
 
         /*
          * Handle a process event. This function is called from the process handler and deals with process state
          * changes as indicated by signals.
          * */
-        virtual void handle_process_event(ProcessHandlerInterface::ProcessEvent event, int data) noexcept = 0;
+        virtual void handle_process_event(ProcessHandlerInterface::ProcessEvent event, int data) = 0;
 
         /*
          * What kind of process is this? ONESHOT is for programs that do something and then exit and should not be
