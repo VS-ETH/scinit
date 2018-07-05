@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef CINIT_CONFIG_PARSE_EXCEPTION_H
-#define CINIT_CONFIG_PARSE_EXCEPTION_H
+#ifndef CINIT_CONFIGINTERFACE_H
+#define CINIT_CONFIGINTERFACE_H
 
-#include <exception>
+#include <memory>
+#include <list>
 
 namespace scinit {
-    class ConfigParseException : virtual std::exception {
-    public:
-        explicit ConfigParseException(const char* reason) noexcept;
-        const char* what() const noexcept override;
+    class ChildProcessInterface;
 
-    private:
-        std::string reason;
+    template <class CTYPE> class ConfigInterface {
+    public:
+        ConfigInterface() = default;
+
+        // No copy
+        ConfigInterface(const ConfigInterface&) = delete;
+        virtual ConfigInterface& operator=(const ConfigInterface&) = delete;
+
+        // Get a list of _all_ processes
+        virtual std::list<std::weak_ptr<CTYPE>> get_processes() const noexcept = 0;
     };
 }
 
 
-#endif //CINIT_CONFIG_PARSE_EXCEPTION_H
+#endif //CINIT_CONFIGINTERFACE_H

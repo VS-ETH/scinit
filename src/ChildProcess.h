@@ -21,46 +21,52 @@
 #include <list>
 #include <map>
 #include "gtest/gtest_prod.h"
+#include "ProcessHandlerInterface.h"
+#include "ChildProcessInterface.h"
 
 namespace scinit {
+    class ProcessLifecycleTests;
 
-    class ChildProcess : public std::enable_shared_from_this<ChildProcess> {
+    // See base class for documentation
+    class ChildProcess : public ChildProcessInterface {
     public:
-        ChildProcess(const std::string&, const std::string &, const std::list<std::string> &,
-                        const std::string &, const std::list<std::string> &, int uid, int gid);
-        void do_fork(std::map<int, std::shared_ptr<scinit::ChildProcess>>&) noexcept(false);
-        int register_with_epoll(int, std::map<int, std::shared_ptr<ChildProcess>>&) noexcept(false);
-        std::string get_name() const noexcept;
-        bool should_restart() const noexcept;
-        bool should_restart_now() noexcept;
-        void notify_of_exit(int rc) noexcept;
+        ChildProcess(const std::string&, const std::string &, const std::list<std::string> &, const std::string &,
+                     const std::list<std::string> &, unsigned int, unsigned int, unsigned int,
+                     std::shared_ptr<ProcessHandlerInterface>, const std::list<std::string> &,
+                     const std::list<std::string> &);
 
-        enum ProcessType {
-            ONESHOT,
-            SIMPLE
-            // TODO (maybe): FORKING
-        };
+        ChildProcess(const ChildProcess&) = delete;
+        virtual ChildProcess& operator=(const ChildProcess&) = delete;
 
-        enum ProcessState {
-            READY,
-            RUNNING,
-            DONE,
-            CRASHED,
-            BACKOFF
-        };
+        void do_fork(std::map<int, int>&) noexcept(false) override;
+        void register_with_epoll(int, std::map<int, int>&) noexcept(false) override;
+        std::string get_name() const noexcept override;
+        unsigned int get_id() const noexcept override;
+        bool can_start_now() const noexcept override;
+        void notify_of_state(std::map<unsigned int, std::weak_ptr<ChildProcessInterface>>) noexcept override;
+        void propagate_dependencies(std::list<std::weak_ptr<ChildProcessInterface>>) noexcept override;
+        void should_wait_for(int, ProcessState) noexcept override;
+        void handle_process_event(ProcessHandlerInterface::ProcessEvent event, int data) noexcept override;
+        ProcessState get_state() const noexcept override ;
 
     private:
         std::string path, name;
-        std::list<std::string> args, capabilities;
-        int primaryPid, uid, gid;
-        int stdouterr[2];
+        std::list<std::string> args, capabilities, before, after;
+        std::list<std::pair<unsigned int, ChildProcessInterface::ProcessState>> conditions;
+        unsigned int uid, gid, graph_id;
+        int stdouterr[2], primaryPid;
         ProcessType type;
         ProcessState state;
+        std::shared_ptr<ProcessHandlerInterface> handler;
 
         void handle_caps();
 
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
         FRIEND_TEST(ConfigParserTests, SimpleConfDTest);
+        FRIEND_TEST(ConfigParserTests, ConfigWithDeps);
+        FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
+        FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
+        friend class ProcessLifecycleTests;
     };
 }
 

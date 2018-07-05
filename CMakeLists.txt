@@ -18,16 +18,20 @@ cmake_minimum_required(VERSION 3.7.2)
 project(cinit)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake)
+IF (${CMAKE_VERSION} VERSION_LESS "3.9.0")
+    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake)
+ENDIF()
 include(GoogleTest)
 enable_testing()
 
-find_package(Boost 1.62 COMPONENTS program_options filesystem REQUIRED)
+find_package(Boost 1.62 COMPONENTS program_options filesystem signals REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(3rdparty/spdlog/include)
 
-set(SCINIT_SOURCE_FILES ChildProcess.cpp ChildProcess.h Config.cpp Config.h ConfigParseException.cpp log.h
-        ChildProcessException.cpp ChildProcessException.h)
+set(SCINIT_SOURCE_FILES ChildProcess.cpp ChildProcess.h Config.h ConfigParseException.cpp log.h
+        ChildProcessException.cpp ChildProcessException.h ProcessHandler.cpp ProcessHandler.h
+        ProcessHandlerException.cpp ProcessHandlerException.h ChildProcessInterface.h ConfigInterface.h
+        ProcessHandlerInterface.h)
 # Absolute paths are a lot easier to use in test targets from another subdirectory...
 foreach(source ${SCINIT_SOURCE_FILES})
     list(APPEND ABS_SCINIT_SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/${source})

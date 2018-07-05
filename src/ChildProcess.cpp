@@ -22,22 +22,38 @@
 #include <iostream>
 #include <memory>
 #include <cstring>
+#include <numeric>
 #include "log.h"
 #include "ChildProcess.h"
 #include "ChildProcessException.h"
 
 namespace scinit {
-
     ChildProcess::ChildProcess(const std::string &name, const std::string &path, const std::list<std::string>& args,
-                               const std::string &type, const std::list<std::string> &capabilities, int uid, int gid) :
-                                path(path), args(args), name(name), capabilities(capabilities), uid(uid), gid(gid) {
-        this->state = READY;
+                               const std::string &type, const std::list<std::string> &capabilities, unsigned int uid,
+                               unsigned int gid, unsigned int graph_id,
+                               std::shared_ptr<ProcessHandlerInterface> handler, const std::list<std::string> &before,
+                               const std::list<std::string> &after) : path(path), args(args), name(name),
+                                                                      capabilities(capabilities), uid(uid), gid(gid),
+                                                                      graph_id(graph_id), handler(handler),
+                                                                      before(before), after(after) {
+        if (before.empty() && after.empty())
+            this->state = READY;
+        else
+            this->state = BLOCKED;
 
         if (type == "simple") {
             this->type = SIMPLE;
         } else {
             this->type = ONESHOT;
         }
+
+        auto ref = std::bind(&ChildProcess::handle_process_event, this,
+                std::placeholders::_1, std::placeholders::_2);
+        handler->register_for_process_state(graph_id, ref);
+    }
+
+    unsigned int ChildProcess::get_id() const noexcept {
+        return graph_id;
     }
 
     void ChildProcess::handle_caps() {
@@ -85,6 +101,7 @@ namespace scinit {
                 std::cout << "Ambient capability '" << capability << "' could not be enabled!" << std::endl;
             }
         }
+
         /*
          * Step 3:
          * According to the original RFC, exec follows the following rules:
@@ -102,7 +119,7 @@ namespace scinit {
         }
     }
 
-    void ChildProcess::do_fork(std::map<int, std::shared_ptr<scinit::ChildProcess>>& reg) noexcept(false) {
+    void ChildProcess::do_fork(std::map<int, int>& reg) noexcept(false) {
         if (state != READY)
             throw ChildProcessException("Process not ready, cannot fork now!");
 
@@ -126,13 +143,13 @@ namespace scinit {
             char *c_args[this->args.size()+2];
             int i = 1;
             c_args[0] = const_cast<char*>(program);
-            for (auto arg : this->args){
+            for (auto& arg : this->args){
                 auto buf = new char[arg.length()+1];
                 std::strcpy(buf, arg.c_str());
                 c_args[i] = buf;
                 i++;
             }
-            c_args[i] = NULL;
+            c_args[i] = nullptr;
 
             // Handle capabilities and drop permissions
             handle_caps();
@@ -147,43 +164,103 @@ namespace scinit {
         close(stdouterr[1]);
         LOG->info("Child pid: {0}", primaryPid);
         state = RUNNING;
-        reg.insert(std::make_pair(primaryPid, shared_from_this()));
+        reg[primaryPid] = graph_id;
     }
 
-    int ChildProcess::register_with_epoll(int epoll_fd, std::map<int, std::shared_ptr<ChildProcess>>& map) noexcept(false) {
+    void ChildProcess::register_with_epoll(int epoll_fd, std::map<int, int>& map) noexcept(false) {
         struct epoll_event setup{};
         setup.data.fd = stdouterr[0];
         setup.events = EPOLLIN;
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, stdouterr[0], &setup) == -1) {
             throw ChildProcessException("Couldn't bind pipe to epoll socket!");
         }
-        map.insert(std::make_pair(stdouterr[0], shared_from_this()));
+        map[stdouterr[0]] = graph_id;
     }
 
     std::string ChildProcess::get_name() const noexcept {
         return name;
     }
 
-    void ChildProcess::notify_of_exit(int rc) noexcept {
-        if (state != RUNNING) {
-            LOG->warn("Child process object in state {0} notified of exit?", state);
+    bool ChildProcess::can_start_now() const noexcept {
+        return state == READY;
+    }
+
+    void ChildProcess::should_wait_for(int other_process, ProcessState other_state) noexcept {
+        bool contains = std::accumulate(conditions.begin(), conditions.end(), false, [other_process](bool contains,
+                auto pair) {
+            if (contains)
+                return true;
+            if (pair.first == other_process)
+                return true;
+            return false;
+        });
+        if (!contains)
+            conditions.push_back(std::make_pair(other_process, other_state));
+    }
+
+    void ChildProcess::propagate_dependencies(std::list<std::weak_ptr<scinit::ChildProcessInterface>> other_processes)
+            noexcept {
+        auto func = [&other_processes, classref=this](auto dependency, bool other_or_this) {
+            for (const auto& weak_ref : other_processes) {
+                if (auto ref = weak_ref.lock()) {
+                    if (ref->get_name() == dependency) {
+                        if (other_or_this)
+                            ref->should_wait_for(classref->graph_id, classref->type==SIMPLE ? ProcessState::DONE :
+                                                 ProcessState::RUNNING);
+                        else
+                            classref->should_wait_for(ref->get_id(), classref->type==SIMPLE ? ProcessState::DONE :
+                                                      ProcessState::RUNNING);
+                    }
+                }
+            }
+        };
+        std::for_each(before.begin(), before.end(), [&func, this](auto arg){func(arg, true);});
+        std::for_each(after.begin(), after.end(), [&func, this](auto arg){func(arg, false);});
+        before.clear();
+        after.clear();
+    }
+
+    ChildProcessInterface::ProcessState ChildProcess::get_state() const noexcept {
+        return state;
+    }
+
+    void ChildProcess::notify_of_state(std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> other_procs)
+                                        noexcept {
+        if (state == BLOCKED) {
+            bool still_blocked = std::accumulate(conditions.begin(), conditions.end(), false, [&other_procs, this]
+                    (bool blocked, auto condition) {
+                if (blocked)
+                    return true;
+                else {
+                    if (!other_procs.count(condition.first)) {
+                        LOG->critical("BUG: Found reference to process that doesn't exist");
+                        return true;
+                    } else if (auto ptr = other_procs[condition.first].lock()) {
+                        return ptr->get_state() != condition.second;
+                    } else {
+                        LOG->critical("BUG: Found reference to process that doesn't exist anymore");
+                        return true;
+                    }
+                }
+            });
+            if (!still_blocked)
+                state = READY;
         }
-
-        if (rc == 0)
-            state = DONE;
-        else
-            state = CRASHED;
     }
 
-    bool ChildProcess::should_restart() const noexcept {
-        return type == SIMPLE && (state == DONE || state == CRASHED);
-    }
-
-    bool ChildProcess::should_restart_now()  noexcept {
-        bool retval = type == SIMPLE && (state == DONE || state == CRASHED);
-        if (retval)
-            state = READY;
-        // TODO: Implement some form of backoff with this
-        return true;
+    void ChildProcess::handle_process_event(ProcessHandlerInterface::ProcessEvent event, int data) noexcept {
+        switch(event){
+            case ProcessHandlerInterface::ProcessEvent::SIGHUP:
+                break;
+            case ProcessHandlerInterface::ProcessEvent::EXIT:
+                if (state != RUNNING) {
+                    LOG->warn("Child process object in state {0} notified of exit?", state);
+                }
+                if (data == 0)
+                    state = DONE;
+                else
+                    state = CRASHED;
+                break;
+        }
     }
 }

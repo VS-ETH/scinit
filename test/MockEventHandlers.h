@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-#ifndef CINIT_CONFIG_PARSE_EXCEPTION_H
-#define CINIT_CONFIG_PARSE_EXCEPTION_H
+#ifndef CINIT_MOCKEVENTHANDLERS_H
+#define CINIT_MOCKEVENTHANDLERS_H
 
-#include <exception>
-
+#include "../3rdparty/googletest/googlemock/include/gmock/gmock.h"
 namespace scinit {
-    class ConfigParseException : virtual std::exception {
+    class MockEventHandlers {
     public:
-        explicit ConfigParseException(const char* reason) noexcept;
-        const char* what() const noexcept override;
+        MockEventHandlers() = default;
 
-    private:
-        std::string reason;
+        MOCK_METHOD0(call_once, void());
     };
-}
+}  // namespace scinit
 
-
-#endif //CINIT_CONFIG_PARSE_EXCEPTION_H
+#endif //CINIT_MOCKEVENTHANDLERS_H

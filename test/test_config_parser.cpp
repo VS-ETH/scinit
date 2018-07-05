@@ -17,8 +17,10 @@
 #include <boost/filesystem.hpp>
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "../src/ChildProcess.h"
 #include "../src/Config.h"
 #include "../src/log.h"
+#include "../src/ProcessHandler.h"
 
 namespace fs = boost::filesystem;
 
@@ -45,26 +47,31 @@ namespace scinit {
     TEST_F(ConfigParserTests, SmokeTestConfig) {
         test_resource /= "smoke-test-config.yml";
         ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
-        scinit::Config uut(test_resource.native());
-        auto procs = uut.getProcesses();
+        auto handler = std::make_shared<scinit::ProcessHandler>();
+        scinit::Config<ChildProcess> uut(test_resource.native(), handler);
+        auto procs = uut.get_processes();
         ASSERT_EQ(procs.size(), 2);
-        for (auto &proc : procs) {
-            if (proc.get()->get_name() == "ping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
-            } else if (proc.get()->get_name() == "failping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
+        for (auto &weak_proc : procs) {
+            if (auto proc = weak_proc.lock()) {
+                if (proc.get()->get_name() == "ping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else if (proc.get()->get_name() == "failping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else {
+                    FAIL() << "Found unexpected program element";
+                }
             } else {
-                FAIL() << "Found unexpected program element";
+                FAIL() << "Couldn't lock weak_ref!";
             }
         }
     }
@@ -77,26 +84,63 @@ namespace scinit {
             if (fs::is_regular(file))
                 files.push_back(file.path().native());
         }
-        scinit::Config uut(files);
-        auto procs = uut.getProcesses();
+        auto handler = std::make_shared<scinit::ProcessHandler>();
+        scinit::Config<ChildProcess> uut(files, handler);
+        auto procs = uut.get_processes();
         ASSERT_EQ(procs.size(), 2);
-        for (auto &proc : procs) {
-            if (proc.get()->get_name() == "ping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
-            } else if (proc.get()->get_name() == "failping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
+        for (auto &weak_proc : procs) {
+            if (auto proc = weak_proc.lock()) {
+                if (proc.get()->get_name() == "ping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else if (proc.get()->get_name() == "failping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else {
+                    FAIL() << "Found unexpected program element";
+                }
             } else {
-                FAIL() << "Found unexpected program element";
+                FAIL() << "Couldn't lock weak_ref!";
+            }
+        }
+    }
+
+    TEST_F(ConfigParserTests, ConfigWithDeps) {
+        test_resource /= "config-with-deps.yml";
+        ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
+        auto handler = std::make_shared<scinit::ProcessHandler>();
+        scinit::Config<ChildProcess> uut(test_resource.native(), handler);
+        auto procs = uut.get_processes();
+        ASSERT_EQ(procs.size(), 2);
+        for (auto &weak_proc : procs) {
+            if (auto proc = weak_proc.lock()) {
+                if (proc.get()->get_name() == "ping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else if (proc.get()->get_name() == "failping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else {
+                    FAIL() << "Found unexpected program element";
+                }
+            } else {
+                FAIL() << "Couldn't lock weak_ref!";
             }
         }
     }
@@ -104,16 +148,18 @@ namespace scinit {
     TEST_F(ConfigParserTests, InvalidProgramConfig) {
         test_resource /= "invalid-program-config.yml";
         ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
-        scinit::Config uut(test_resource.native());
-        auto procs = uut.getProcesses();
+        auto handler = std::make_shared<scinit::ProcessHandler>();
+        scinit::Config<ChildProcess> uut(test_resource.native(), handler);
+        auto procs = uut.get_processes();
         ASSERT_EQ(procs.size(), 0);
     }
 
     TEST_F(ConfigParserTests, BrokenYamlConfig) {
         test_resource /= "broken-yaml-config.yml";
         ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
+        auto handler = std::make_shared<scinit::ProcessHandler>();
         try {
-            scinit::Config uut(test_resource.native());
+            scinit::Config<ChildProcess> uut(test_resource.native(), handler);
             FAIL() << "Expected an exception when parsing invalid YAML...";
         } catch (std::exception& e) {
             ASSERT_THAT(e.what(), ::testing::StartsWith("yaml-cpp: error at line 5, column 14: illegal EOF in scalar"));
