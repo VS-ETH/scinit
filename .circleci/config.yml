@@ -19,7 +19,7 @@ jobs:
             cat .clang-tidy | grep WarningsAsErrors
       - run:
           name: build
-          command: mkdir build && cd build && cmake .. && make -j$(nproc) && make format
+          command: mkdir build && cd build && cmake .. && make -j4 && make format
       - run:
           name: Check code format
           command: |
