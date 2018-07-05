@@ -42,14 +42,14 @@ namespace scinit {
                 handler(handler) {
             if (fs::is_directory(fs::path(path)))
                 throw ConfigParseException("This constructor is for single files only!");
-            loadFile(path);
+            load_file(path);
             LOG->info("Config loaded");
         }
 
         Config(const std::list<std::string> &files, std::shared_ptr<ProcessHandlerInterface> handler) noexcept(false) :
                 handler(handler) {
             for (auto file : files) {
-                loadFile(file);
+                load_file(file);
             }
             LOG->info("Config loaded");
         }
@@ -65,17 +65,27 @@ namespace scinit {
         virtual Config& operator=(const Config&) = delete;
 
     private:
-        void loadFile(const std::string& file) noexcept(false) {
+        void load_file(const std::string& file) noexcept(false) {
             auto root = YAML::LoadFile(file);
 
             if (!root["programs"])
                 throw ConfigParseException("Config file is missing the 'programs' node!");
 
             LOG->debug("Dump\n{0}", root);
-            parseFile(root);
+            parse_file(root);
         }
 
-        void parseFile(const YAML::Node & rootNode) {
+        std::list<std::string> yaml_node_to_str_list(YAML::iterator root, std::string node_name) {
+            std::list<std::string> list;
+            if ((*root)[node_name]) {
+                YAML::Node node = (*root)[node_name];
+                for (auto str : node)
+                    list.push_back(str.as<std::string>());
+            }
+            return std::move(list);
+        }
+
+        void parse_file(const YAML::Node & rootNode) {
             YAML::Node programs = rootNode["programs"];
             for (auto program = programs.begin(); program != programs.end(); program++) {
                 if (!(*program)["name"]) {
@@ -88,24 +98,15 @@ namespace scinit {
                     continue;
                 }
 
-                std::list<std::string> arg_list;
-                if ((*program)["args"]) {
-                    YAML::Node args = (*program)["args"];
-                    for (auto arg : args)
-                        arg_list.push_back(arg.as<std::string>());
-                }
-
                 std::string type = "simple";
                 if ((*program)["type"]) {
                     type = (*program)["type"].as<std::string>();
                 }
 
-                std::list<std::string> capabilities;
-                if ((*program)["capabilities"]) {
-                    YAML::Node caps = (*program)["capabilities"];
-                    for (auto capability : caps)
-                        capabilities.push_back(capability.as<std::string>());
-                }
+                std::list<std::string> arg_list = yaml_node_to_str_list(program, "args"),
+                        capabilities = yaml_node_to_str_list(program, "capabilities"),
+                        before = yaml_node_to_str_list(program, "before"),
+                        after = yaml_node_to_str_list(program, "after");
 
                 int uid = 65534, gid = 65534;
                 if ((*program)["uid"]) {
@@ -117,7 +118,7 @@ namespace scinit {
 
                 auto process = std::make_shared<ChildProcess>(
                         (*program)["name"].as<std::string>(),(*program)["path"].as<std::string>(), arg_list, type,
-                        capabilities, uid, gid, child_counter++, handler);
+                        capabilities, uid, gid, child_counter++, handler, before, after);
                 processes.push_back(process);
                 handler->register_obj_id(process->get_id(), process);
             }

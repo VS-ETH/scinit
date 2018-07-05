@@ -22,6 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <cstring>
+#include <numeric>
 #include "log.h"
 #include "ChildProcess.h"
 #include "ChildProcessException.h"
@@ -30,11 +31,15 @@ namespace scinit {
     ChildProcess::ChildProcess(const std::string &name, const std::string &path, const std::list<std::string>& args,
                                const std::string &type, const std::list<std::string> &capabilities, unsigned int uid,
                                unsigned int gid, unsigned int graph_id,
-                               std::shared_ptr<ProcessHandlerInterface> handler) : path(path), args(args), name(name),
-                                                                                   capabilities(capabilities), uid(uid),
-                                                                                   gid(gid), graph_id(graph_id),
-                                                                                   handler(handler) {
-        this->state = READY;
+                               std::shared_ptr<ProcessHandlerInterface> handler, const std::list<std::string> &before,
+                               const std::list<std::string> &after) : path(path), args(args), name(name),
+                                                                      capabilities(capabilities), uid(uid), gid(gid),
+                                                                      graph_id(graph_id), handler(handler),
+                                                                      before(before), after(after) {
+        if (before.empty() && after.empty())
+            this->state = READY;
+        else
+            this->state = BLOCKED;
 
         if (type == "simple") {
             this->type = SIMPLE;
@@ -180,11 +185,67 @@ namespace scinit {
         return state == READY;
     }
 
-    void ChildProcess::notify_of_state(std::list<std::weak_ptr<ChildProcessInterface>> other_procs) noexcept {
+    void ChildProcess::should_wait_for(int other_process, ProcessState other_state) noexcept {
+        bool contains = std::accumulate(conditions.begin(), conditions.end(), false, [other_process](bool contains,
+                auto pair) {
+            if (contains)
+                return true;
+            if (pair.first == other_process)
+                return true;
+            return false;
+        });
+        if (!contains)
+            conditions.push_back(std::make_pair(other_process, other_state));
+    }
+
+    void ChildProcess::propagate_dependencies(std::list<std::weak_ptr<scinit::ChildProcessInterface>> other_processes)
+            noexcept {
+        auto func = [&other_processes, classref=this](auto dependency, bool other_or_this) {
+            for (const auto& weak_ref : other_processes) {
+                if (auto ref = weak_ref.lock()) {
+                    if (ref->get_name() == dependency) {
+                        if (other_or_this)
+                            ref->should_wait_for(classref->graph_id, classref->type==SIMPLE ? ProcessState::DONE :
+                                                 ProcessState::RUNNING);
+                        else
+                            classref->should_wait_for(ref->get_id(), classref->type==SIMPLE ? ProcessState::DONE :
+                                                      ProcessState::RUNNING);
+                    }
+                }
+            }
+        };
+        std::for_each(before.begin(), before.end(), [&func, this](auto arg){func(arg, true);});
+        std::for_each(after.begin(), after.end(), [&func, this](auto arg){func(arg, false);});
+        before.clear();
+        after.clear();
+    }
+
+    ChildProcessInterface::ProcessState ChildProcess::get_state() const noexcept {
+        return state;
+    }
+
+    void ChildProcess::notify_of_state(std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> other_procs)
+                                        noexcept {
         if (state == BLOCKED) {
-            // TODO: Implement
+            bool still_blocked = std::accumulate(conditions.begin(), conditions.end(), false, [&other_procs, this]
+                    (bool blocked, auto condition) {
+                if (blocked)
+                    return true;
+                else {
+                    if (!other_procs.count(condition.first)) {
+                        LOG->critical("BUG: Found reference to process that doesn't exist");
+                        return true;
+                    } else if (auto ptr = other_procs[condition.first].lock()) {
+                        return ptr->get_state() != condition.second;
+                    } else {
+                        LOG->critical("BUG: Found reference to process that doesn't exist anymore");
+                        return true;
+                    }
+                }
+            });
+            if (!still_blocked)
+                state = READY;
         }
-        // TODO: Implement
     }
 
     void ChildProcess::handle_process_event(ProcessHandlerInterface::ProcessEvent event, int data) noexcept {

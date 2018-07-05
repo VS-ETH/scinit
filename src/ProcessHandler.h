@@ -21,6 +21,7 @@
 #include "gtest/gtest_prod.h"
 
 namespace scinit {
+
     // See base class for documentation
     class ProcessHandler : public ProcessHandlerInterface {
     public:
@@ -36,7 +37,7 @@ namespace scinit {
 
     private:
         std::map<int, boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>*> sig_for_id;
-        std::map<int, std::weak_ptr<ChildProcessInterface>> obj_for_id;
+        std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> obj_for_id;
         std::map<int, int> id_for_pid;
         std::map<int, int> id_for_fd;
         std::list<std::weak_ptr<ChildProcessInterface>> all_objs;
@@ -52,6 +53,7 @@ namespace scinit {
         FRIEND_TEST(ProcessHandlerTests, TestOneRunnableChild);
         FRIEND_TEST(ProcessHandlerTests, TestOneChildLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
+        FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
     };
 }
 

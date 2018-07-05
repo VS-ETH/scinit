@@ -28,8 +28,10 @@ namespace scinit {
                 MockChildProcess(const std::string &name, const std::string &path, const std::list<std::string> &args,
                                  const std::string &type, const std::list<std::string> &capabilities, unsigned int uid,
                                  unsigned int gid, unsigned int graph_id,
-                                 std::shared_ptr<ProcessHandlerInterface> handler) :
-                        ChildProcess(name, path, args, type, capabilities, uid, gid, graph_id, handler) {};
+                                 std::shared_ptr<ProcessHandlerInterface> handler, const std::list<std::string> &before,
+                                 const std::list<std::string> &after) :
+                        ChildProcess(name, path, args, type, capabilities, uid, gid, graph_id, handler, before, after) {
+                };
 
                 MOCK_METHOD1(do_fork, void(std::map<int, int>&));
                 MOCK_METHOD2(register_with_epoll, void(int epoll_fd, std::map<int, int>& map));

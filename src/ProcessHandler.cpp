@@ -143,7 +143,7 @@ namespace scinit {
         setup_signal_handlers();
         for (auto& child: all_objs) {
             if (auto ptr = child.lock()) {
-                ptr->notify_of_state(all_objs);
+                ptr->notify_of_state(obj_for_id);
             } else {
                 LOG->warn("Free'd child in child list!");
             }
