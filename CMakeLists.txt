@@ -18,7 +18,9 @@ cmake_minimum_required(VERSION 3.7.2)
 project(cinit)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake)
+IF (${CMAKE_VERSION} VERSION_LESS "3.9.0")
+    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake)
+ENDIF()
 include(GoogleTest)
 enable_testing()
 
