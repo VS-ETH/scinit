@@ -39,11 +39,16 @@ jobs:
       - run:
           name: Run unittests
           command: |
-            mkdir unittests && \
-            mkdir unittests/config-test && \
+            mkdir -p unittests/tests && \
             cd build && \
-            ctest -T Test --output-on-failure || /bin/true && \
-            xsltproc ../3rdparty/transform-test.xslt Testing/2*/*.xml > ../unittests/config-test/test.xml
+            export GTEST_OUTPUT="xml:/tmp/build/unittests/test/" && \
+            for i in $(echo test/*_tests) ; do $i ; done && \
+            cd /tmp/build/unittests/test && \
+            for i in * ; do export DIR=$(echo $i|sed 's/_tests.xml//g') && mkdir ../$DIR ; cp $i ../$DIR ; done && \
+            cd .. && \
+            rm -Rf test
+          #ctest -T Test --output-on-failure || /bin/true && \
+          #xsltproc ../3rdparty/transform-test.xslt Testing/2*/*.xml > ../unittests/config-test/test.xml
       - store_test_results:
           path: /tmp/build/unittests
   smoke-test:
