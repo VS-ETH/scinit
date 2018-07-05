@@ -18,16 +18,17 @@
 #define CINIT_CHILDPROCESSEXCEPTION_H
 
 #include <exception>
+#include <string>
 
 namespace scinit {
     class ChildProcessException : virtual std::exception {
-    public:
-        explicit ChildProcessException(const char* reason) noexcept;
+      public:
+        explicit ChildProcessException(const char*) noexcept;
         const char* what() const noexcept override;
 
-    private:
+      private:
         std::string reason;
     };
-}
+}  // namespace scinit
 
-#endif //CINIT_CHILDPROCESSEXCEPTION_H
+#endif  // CINIT_CHILDPROCESSEXCEPTION_H

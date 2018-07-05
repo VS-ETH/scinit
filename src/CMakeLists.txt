@@ -18,3 +18,7 @@
 add_executable(scinit main.cpp ${SCINIT_SOURCE_FILES})
 # Link gtest. We won't use any symbols but the dependency makes the includes available...
 target_link_libraries(scinit yaml-cpp pthread cap gtest_main ${Boost_LIBRARIES})
+if (CLANG_TIDY AND CMAKE_BUILD_TYPE MATCHES Debug)
+    message(STATUS "clang-tidy enabled for scinit")
+    set_target_properties(scinit PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_ARGS}")
+endif()

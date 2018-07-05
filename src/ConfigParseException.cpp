@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-#include <string>
 #include "ConfigParseException.h"
+#include <string>
 
 namespace scinit {
-    ConfigParseException::ConfigParseException(const char* what) noexcept {
-        this->reason = std::string(what);
-    }
+    ConfigParseException::ConfigParseException(const char* what) noexcept { this->reason = std::string(what); }
 
-    const char* ConfigParseException::what() const noexcept {
-        return this->reason.c_str();
-    }
-}
+    const char* ConfigParseException::what() const noexcept { return this->reason.c_str(); }
+}  // namespace scinit

@@ -22,14 +22,14 @@
 
 namespace scinit {
     class ProcessHandlerException : virtual std::exception {
-    public:
-        explicit ProcessHandlerException(const char* reason) noexcept;
+      public:
+        explicit ProcessHandlerException(const char*) noexcept;
         ProcessHandlerException() noexcept;
         const char* what() const noexcept override;
 
-    private:
+      private:
         std::string reason;
     };
-}
+}  // namespace scinit
 
-#endif //CINIT_PROCESSHANDLEREXCEPTION_H
+#endif  // CINIT_PROCESSHANDLEREXCEPTION_H

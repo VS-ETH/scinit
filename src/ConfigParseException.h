@@ -18,17 +18,17 @@
 #define CINIT_CONFIG_PARSE_EXCEPTION_H
 
 #include <exception>
+#include <string>
 
 namespace scinit {
     class ConfigParseException : virtual std::exception {
-    public:
-        explicit ConfigParseException(const char* reason) noexcept;
+      public:
+        explicit ConfigParseException(const char*) noexcept;
         const char* what() const noexcept override;
 
-    private:
+      private:
         std::string reason;
     };
-}
+}  // namespace scinit
 
-
-#endif //CINIT_CONFIG_PARSE_EXCEPTION_H
+#endif  // CINIT_CONFIG_PARSE_EXCEPTION_H

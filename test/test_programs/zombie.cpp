@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include <iostream>
 #include <unistd.h>
+#include <iostream>
 
 // Fork a child and do not check it's status.
-int main (int argc, char** argv) {
+int main(int, char**) {
     int pid = fork();
     if (pid == 0) {
         return -1;

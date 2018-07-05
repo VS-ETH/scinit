@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include <boost/filesystem.hpp>
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include <boost/filesystem.hpp>
 #include "../src/ChildProcess.h"
 #include "../src/Config.h"
-#include "../src/log.h"
 #include "../src/ProcessHandler.h"
+#include "../src/log.h"
 
 namespace fs = boost::filesystem;
 
 namespace scinit {
     class ConfigParserTests : public testing::Test {
-    protected:
+      protected:
         fs::path test_resource;
 
         void SetUp() {
@@ -80,7 +80,7 @@ namespace scinit {
         test_resource /= "conf.d";
         ASSERT_TRUE(fs::is_directory(test_resource)) << "Test resource missing";
         std::list<std::string> files;
-        for (auto& file : fs::directory_iterator(test_resource)) {
+        for (auto &file : fs::directory_iterator(test_resource)) {
             if (fs::is_regular(file))
                 files.push_back(file.path().native());
         }
@@ -161,10 +161,8 @@ namespace scinit {
         try {
             scinit::Config<ChildProcess> uut(test_resource.native(), handler);
             FAIL() << "Expected an exception when parsing invalid YAML...";
-        } catch (std::exception& e) {
+        } catch (std::exception &e) {
             ASSERT_THAT(e.what(), ::testing::StartsWith("yaml-cpp: error at line 5, column 14: illegal EOF in scalar"));
-        } catch (...) {
-            FAIL() << "Wrong exception type";
-        }
+        } catch (...) { FAIL() << "Wrong exception type"; }
     }
-}
+}  // namespace scinit

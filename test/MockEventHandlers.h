@@ -20,11 +20,11 @@
 #include "../3rdparty/googletest/googlemock/include/gmock/gmock.h"
 namespace scinit {
     class MockEventHandlers {
-    public:
+      public:
         MockEventHandlers() = default;
 
         MOCK_METHOD0(call_once, void());
     };
 }  // namespace scinit
 
-#endif //CINIT_MOCKEVENTHANDLERS_H
+#endif  // CINIT_MOCKEVENTHANDLERS_H

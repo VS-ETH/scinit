@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "process_handler_test/MockChildProcess.h"
-#include "MockEventHandlers.h"
+#include "gtest/gtest.h"
 #include "../src/log.h"
+#include "MockEventHandlers.h"
+#include "process_handler_test/MockChildProcess.h"
 
 using ::testing::Return;
 using ::testing::_;
@@ -26,7 +26,7 @@ using namespace scinit::test::handler;
 
 namespace scinit {
     class ProcessHandlerTests : public testing::Test {
-    protected:
+      protected:
         void SetUp() {
             if (!spdlog::get("scinit")) {
                 auto console = spdlog::stdout_color_st("scinit");
@@ -35,16 +35,14 @@ namespace scinit {
             }
         }
 
-        void TearDown() {
-            spdlog::drop_all();
-        }
+        void TearDown() { spdlog::drop_all(); }
     };
 
     TEST_F(ProcessHandlerTests, TestOneRunnableChild) {
         auto child_1 = std::make_shared<MockChildProcess>();
         EXPECT_CALL(*child_1, can_start_now()).WillRepeatedly(Return(true));
         EXPECT_CALL(*child_1, do_fork(_)).Times(1);
-        EXPECT_CALL(*child_1, register_with_epoll(_,_)).Times(1);
+        EXPECT_CALL(*child_1, register_with_epoll(_, _)).Times(1);
         EXPECT_CALL(*child_1, get_name()).Times(2).WillRepeatedly(Return("mockprog"));
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
         all_children.push_back(child_1);
@@ -60,7 +58,7 @@ namespace scinit {
         auto child_1 = std::make_shared<MockChildProcess>();
         EXPECT_CALL(*child_1, can_start_now()).WillRepeatedly(Return(true));
         EXPECT_CALL(*child_1, do_fork(_)).Times(1);
-        EXPECT_CALL(*child_1, register_with_epoll(_,_)).Times(1);
+        EXPECT_CALL(*child_1, register_with_epoll(_, _)).Times(1);
         EXPECT_CALL(*child_1, get_name()).Times(3).WillRepeatedly(Return("mockprog"));
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
         all_children.push_back(child_1);
@@ -85,4 +83,4 @@ namespace scinit {
         EXPECT_EQ(handler.number_of_running_procs, 0);
         delete mock_events;
     }
-}
+}  // namespace scinit

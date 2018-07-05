@@ -18,9 +18,16 @@ cmake_minimum_required(VERSION 3.7.2)
 project(cinit)
 
 set(CMAKE_CXX_STANDARD 14)
-IF (${CMAKE_VERSION} VERSION_LESS "3.9.0")
+if (${CMAKE_VERSION} VERSION_LESS "3.9.0")
     set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake)
-ENDIF()
+endif()
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+    message(STATUS "No build type specified, defaulting to Debug")
+endif()
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra -Werror")
+endif()
 include(GoogleTest)
 enable_testing()
 
@@ -36,14 +43,43 @@ set(SCINIT_SOURCE_FILES ChildProcess.cpp ChildProcess.h Config.h ConfigParseExce
 foreach(source ${SCINIT_SOURCE_FILES})
     list(APPEND ABS_SCINIT_SOURCE_FILES ${PROJECT_SOURCE_DIR}/src/${source})
 endforeach()
+# All source files - used for clang-format
+#set(ALL_SOURCE_FILES ${ABS_SCINIT_SOURCE_FILES})
 
 # Add GTest here, since we need 'gtest_prod.h' in src/
 add_subdirectory(3rdparty/googletest gtest-build EXCLUDE_FROM_ALL)
 target_include_directories(gmock_main SYSTEM BEFORE INTERFACE
         "${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
 
+# Clang-tidy
+# TODO(uubk): hicpp-braces-around-statements
+find_program(CLANG_TIDY NAMES clang-tidy-6.0 clang-tidy-5.0 clang-tidy-3.9 clang-tidy-3.8  clang-tidy)
+if(NOT CLANG_TIDY)
+    message(WARNING "clang-tidy not found, checks will not be performed!")
+else()
+    message(STATUS "clang-tidy found: ${CLANG_TIDY}, buildtype: ${CMAKE_BUILD_TYPE}")
+    set(CLANG_TIDY_ARGS "${CLANG_TIDY}")
+endif()
+
 # Main source
 add_subdirectory(src)
 
 # Tests
 add_subdirectory(test)
+
+# Clang-format
+file(GLOB_RECURSE SCINIT_TEST_SOURCE_FILES_CPP test/*.cpp)
+file(GLOB_RECURSE SCINIT_TEST_SOURCE_FILES_H test/*.h)
+file(GLOB_RECURSE SCINIT_MAIN_SOURCE_FILES_CPP src/*.cpp)
+file(GLOB_RECURSE SCINIT_MAIN_SOURCE_FILES_H src/*.h)
+
+set(ALL_SOURCE_FILES ${SCINIT_TEST_SOURCE_FILES_CPP} ${SCINIT_TEST_SOURCE_FILES_H} ${SCINIT_MAIN_SOURCE_FILES_CPP}
+        ${SCINIT_MAIN_SOURCE_FILES_H})
+
+add_custom_target(
+        format
+        COMMAND /usr/bin/clang-format
+        -style=file
+        -i
+        ${ALL_SOURCE_FILES}
+)

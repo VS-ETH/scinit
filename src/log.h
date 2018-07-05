@@ -22,4 +22,4 @@
 
 #define LOG spdlog::get("scinit")
 
-#endif //CINIT_LOG_H
+#endif  // CINIT_LOG_H
