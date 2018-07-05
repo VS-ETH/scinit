@@ -28,18 +28,18 @@ namespace scinit {
         ProcessHandler(const ProcessHandler&) = delete;
         virtual ProcessHandler& operator=(const ProcessHandler&) = delete;
 
-        void register_processes(std::list<std::shared_ptr<ChildProcessInterface>>&) override;
+        void register_processes(std::list<std::weak_ptr<ChildProcessInterface>>&) override;
         void register_for_process_state(int id, std::function<void(ProcessHandlerInterface::ProcessEvent, int)> handler)
                                             override;
-        void register_obj_id(int, std::shared_ptr<ChildProcessInterface>) override;
+        void register_obj_id(int, std::weak_ptr<ChildProcessInterface>) override;
         int enter_eventloop() override;
 
     private:
         std::map<int, boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>*> sig_for_id;
-        std::map<int, std::shared_ptr<ChildProcessInterface>> obj_for_id;
+        std::map<int, std::weak_ptr<ChildProcessInterface>> obj_for_id;
         std::map<int, int> id_for_pid;
         std::map<int, int> id_for_fd;
-        std::list<std::shared_ptr<ChildProcessInterface>> all_objs;
+        std::list<std::weak_ptr<ChildProcessInterface>> all_objs;
         int epoll_fd = -1, signal_fd = -1 , number_of_running_procs = 0;
         bool should_quit = false;
 
@@ -51,6 +51,7 @@ namespace scinit {
 
         FRIEND_TEST(ProcessHandlerTests, TestOneRunnableChild);
         FRIEND_TEST(ProcessHandlerTests, TestOneChildLifecycle);
+        FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
     };
 }
 

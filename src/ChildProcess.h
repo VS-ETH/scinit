@@ -36,11 +36,11 @@ namespace scinit {
         virtual ChildProcess& operator=(const ChildProcess&) = delete;
 
         void do_fork(std::map<int, int>&) noexcept(false) override;
-        int register_with_epoll(int, std::map<int, int>&) noexcept(false) override;
+        void register_with_epoll(int, std::map<int, int>&) noexcept(false) override;
         std::string get_name() const noexcept override;
         unsigned int get_id() const noexcept override;
         bool can_start_now() const noexcept override;
-        void notify_of_state(std::list<std::shared_ptr<ChildProcessInterface>>) noexcept override;
+        void notify_of_state(std::list<std::weak_ptr<ChildProcessInterface>>) noexcept override;
         void handle_process_event(ProcessHandlerInterface::ProcessEvent event, int data) noexcept override;
 
     private:
@@ -57,6 +57,7 @@ namespace scinit {
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
         FRIEND_TEST(ConfigParserTests, SimpleConfDTest);
         FRIEND_TEST(ConfigParserTests, ConfigWithDeps);
+        FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
     };
 }
 

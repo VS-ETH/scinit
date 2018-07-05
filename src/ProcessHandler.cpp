@@ -31,7 +31,7 @@
 #define BUF_SIZE 4096
 
 namespace scinit {
-    void ProcessHandler::register_processes(std::list<std::shared_ptr<ChildProcessInterface>>& refs) {
+    void ProcessHandler::register_processes(std::list<std::weak_ptr<ChildProcessInterface>>& refs) {
         this->all_objs = refs;
     }
 
@@ -44,7 +44,7 @@ namespace scinit {
         signal->connect(handler);
     }
 
-    void ProcessHandler::register_obj_id(int id, std::shared_ptr<ChildProcessInterface> obj) {
+    void ProcessHandler::register_obj_id(int id, std::weak_ptr<ChildProcessInterface> obj) {
         obj_for_id[id] = std::move(obj);
     }
 
@@ -98,9 +98,13 @@ namespace scinit {
                 // If there is something left, output it
                 if (str.size() > 0) {
                     int id = id_for_fd.at(fd);
-                    auto obj = obj_for_id.at(id);
-                    std::string name = obj->get_name();
-                    spdlog::get(name)->info(str);
+                    if (auto obj = obj_for_id.at(id).lock()) {
+                        std::string name = obj->get_name();
+                        spdlog::get(name)->info(str);
+                    } else {
+                        LOG->critical("BUG: Child (id {0}) outputted something but the object has already been freed!",
+                                      id);
+                    }
                 }
             }
         } else if (event & EPOLLHUP) {
@@ -121,9 +125,13 @@ namespace scinit {
         if (id_for_pid.count(pid) > 0) {
             // One of ours!
             int id = id_for_pid[pid];
-            LOG->info("Child {0} (PID {1}) exitted with RC {2}",
-                      obj_for_id[id]->get_name(), pid, rc);
-
+            if (auto ptr = obj_for_id[id].lock()) {
+                LOG->info("Child {0} (PID {1}) exitted with RC {2}",
+                          ptr->get_name(), pid, rc);
+            } else {
+                LOG->critical("BUG: Child (PID {0}) exitted with RC {1} and the object has already been freed!",
+                              pid, rc);
+            }
             number_of_running_procs--;
             (*sig_for_id[id])(EXIT, rc);
         } else {
@@ -134,7 +142,11 @@ namespace scinit {
     int ProcessHandler::enter_eventloop() {
         setup_signal_handlers();
         for (auto& child: all_objs) {
-            child->notify_of_state(all_objs);
+            if (auto ptr = child.lock()) {
+                ptr->notify_of_state(all_objs);
+            } else {
+                LOG->warn("Free'd child in child list!");
+            }
         }
 
         start_programs();
@@ -209,21 +221,25 @@ namespace scinit {
     }
 
     void ProcessHandler::start_programs() {
-        for (const auto & program : all_objs) {
-            if (!program->can_start_now())
-                continue;
-            try {
-                // Register logger
-                auto console = spdlog::stdout_color_st(program->get_name());
-                console->set_pattern("[%^%n%$] [%H:%M:%S.%e] %v");
+        for (const auto & weak_program : all_objs) {
+            if (auto program = weak_program.lock()) {
+                if (!program->can_start_now())
+                    continue;
+                try {
+                    // Register logger
+                    auto console = spdlog::stdout_color_st(program->get_name());
+                    console->set_pattern("[%^%n%$] [%H:%M:%S.%e] %v");
 
-                // Start program
-                LOG->info("Starting: {0}", program->get_name());
-                program->do_fork(id_for_pid);
-                program->register_with_epoll(epoll_fd, id_for_fd);
-                number_of_running_procs++;
-            } catch (std::exception & e) {
-                LOG->critical("Couldn't start program: {0}", e.what());
+                    // Start program
+                    LOG->info("Starting: {0}", program->get_name());
+                    program->do_fork(id_for_pid);
+                    program->register_with_epoll(epoll_fd, id_for_fd);
+                    number_of_running_procs++;
+                } catch (std::exception &e) {
+                    LOG->critical("Couldn't start program: {0}", e.what());
+                }
+            } else {
+                LOG->warn("Free'd child in child list!");
             }
         }
     }

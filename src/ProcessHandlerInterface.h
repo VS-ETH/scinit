@@ -45,17 +45,17 @@ namespace scinit {
          * Register processes. This is not in the constructor since this object has to be passed to the ChildProcesses
          * constructor.
          */
-        virtual void register_processes(std::list<std::shared_ptr<ChildProcessInterface>>&) = 0;
+        virtual void register_processes(std::list<std::weak_ptr<ChildProcessInterface>>&) = 0;
 
         /*
          * Called by ChildProcesses to register for process state events
          */
-        virtual void register_for_process_state(const int id, const std::function<void(ProcessEvent, int)> handler) = 0;
+        virtual void register_for_process_state(int id, std::function<void(ProcessEvent, int)> handler) = 0;
 
         /*
          * Called by ChildProcesses to tell us their object ID
          */
-        virtual void register_obj_id(int, std::shared_ptr<ChildProcessInterface>) = 0;
+        virtual void register_obj_id(int, std::weak_ptr<ChildProcessInterface>) = 0;
 
         /*
          * Called by main. This function should not exit until the program is supposed to exit

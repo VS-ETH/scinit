@@ -51,23 +51,27 @@ namespace scinit {
         scinit::Config<ChildProcess> uut(test_resource.native(), handler);
         auto procs = uut.get_processes();
         ASSERT_EQ(procs.size(), 2);
-        for (auto &proc : procs) {
-            if (proc.get()->get_name() == "ping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
-            } else if (proc.get()->get_name() == "failping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
+        for (auto &weak_proc : procs) {
+            if (auto proc = weak_proc.lock()) {
+                if (proc.get()->get_name() == "ping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else if (proc.get()->get_name() == "failping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else {
+                    FAIL() << "Found unexpected program element";
+                }
             } else {
-                FAIL() << "Found unexpected program element";
+                FAIL() << "Couldn't lock weak_ref!";
             }
         }
     }
@@ -84,23 +88,27 @@ namespace scinit {
         scinit::Config<ChildProcess> uut(files, handler);
         auto procs = uut.get_processes();
         ASSERT_EQ(procs.size(), 2);
-        for (auto &proc : procs) {
-            if (proc.get()->get_name() == "ping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
-            } else if (proc.get()->get_name() == "failping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
+        for (auto &weak_proc : procs) {
+            if (auto proc = weak_proc.lock()) {
+                if (proc.get()->get_name() == "ping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else if (proc.get()->get_name() == "failping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else {
+                    FAIL() << "Found unexpected program element";
+                }
             } else {
-                FAIL() << "Found unexpected program element";
+                FAIL() << "Couldn't lock weak_ref!";
             }
         }
     }
@@ -112,23 +120,27 @@ namespace scinit {
         scinit::Config<ChildProcess> uut(test_resource.native(), handler);
         auto procs = uut.get_processes();
         ASSERT_EQ(procs.size(), 2);
-        for (auto &proc : procs) {
-            if (proc.get()->get_name() == "ping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
-            } else if (proc.get()->get_name() == "failping") {
-                ASSERT_EQ(proc.get()->path, "./ping");
-                ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
-                ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
-                ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
-                ASSERT_EQ(proc.get()->uid, 65534);
-                ASSERT_EQ(proc.get()->gid, 65534);
+        for (auto &weak_proc : procs) {
+            if (auto proc = weak_proc.lock()) {
+                if (proc.get()->get_name() == "ping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else if (proc.get()->get_name() == "failping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::IsEmpty());
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else {
+                    FAIL() << "Found unexpected program element";
+                }
             } else {
-                FAIL() << "Found unexpected program element";
+                FAIL() << "Couldn't lock weak_ref!";
             }
         }
     }

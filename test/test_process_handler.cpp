@@ -16,12 +16,13 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "MockChildProcess.h"
+#include "process_handler_test/MockChildProcess.h"
 #include "MockEventHandlers.h"
 #include "../src/log.h"
 
 using ::testing::Return;
 using ::testing::_;
+using namespace scinit::test::handler;
 
 namespace scinit {
     class ProcessHandlerTests : public testing::Test {
@@ -45,7 +46,7 @@ namespace scinit {
         EXPECT_CALL(*child_1, do_fork(_)).Times(1);
         EXPECT_CALL(*child_1, register_with_epoll(_,_)).Times(1);
         EXPECT_CALL(*child_1, get_name()).Times(2).WillRepeatedly(Return("mockprog"));
-        std::list<std::shared_ptr<ChildProcessInterface>> all_children;
+        std::list<std::weak_ptr<ChildProcessInterface>> all_children;
         all_children.push_back(child_1);
 
         ProcessHandler handler;
@@ -61,7 +62,7 @@ namespace scinit {
         EXPECT_CALL(*child_1, do_fork(_)).Times(1);
         EXPECT_CALL(*child_1, register_with_epoll(_,_)).Times(1);
         EXPECT_CALL(*child_1, get_name()).Times(3).WillRepeatedly(Return("mockprog"));
-        std::list<std::shared_ptr<ChildProcessInterface>> all_children;
+        std::list<std::weak_ptr<ChildProcessInterface>> all_children;
         all_children.push_back(child_1);
 
         ProcessHandler handler;

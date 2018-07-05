@@ -21,6 +21,7 @@
 #include <boost/filesystem.hpp>
 #include <yaml-cpp/yaml.h>
 #include <iostream>
+#include <numeric>
 #include "ConfigInterface.h"
 #include "Config.h"
 #include "ConfigParseException.h"
@@ -53,8 +54,11 @@ namespace scinit {
             LOG->info("Config loaded");
         }
 
-        std::list<std::shared_ptr<CTYPE>> get_processes() const noexcept override {
-            return processes;
+        std::list<std::weak_ptr<CTYPE>> get_processes() const noexcept override {
+            return std::accumulate(processes.begin(), processes.end(), std::list<std::weak_ptr<CTYPE>>(), [](auto list, auto ptr){
+                list.push_back(ptr);
+                return list;
+            });
         }
 
         Config(const Config&) = delete;

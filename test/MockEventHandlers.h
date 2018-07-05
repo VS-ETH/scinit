@@ -17,11 +17,12 @@
 #ifndef CINIT_MOCKEVENTHANDLERS_H
 #define CINIT_MOCKEVENTHANDLERS_H
 
-#include "gmock/gmock.h"
+#include "../3rdparty/googletest/googlemock/include/gmock/gmock.h"
 namespace scinit {
     class MockEventHandlers {
     public:
         MockEventHandlers() = default;
+
         MOCK_METHOD0(call_once, void());
     };
 }  // namespace scinit

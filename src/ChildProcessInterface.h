@@ -40,13 +40,13 @@ namespace scinit {
          * In order to handle stdout/stderr forwarding, the pipe needs to be registered with epoll,
          * which is what this function does. It also registers the fd to the current object.
          */
-        virtual int register_with_epoll(int epollfd, std::map<int, int>& fd_to_obj) = 0;
+        virtual void register_with_epoll(int epollfd, std::map<int, int>& fd_to_obj) = 0;
 
         /*
          * This function is called by the process handler with a list of all existing processes as an argument.
          * It is supposed to advance the internal state machine.
          */
-        virtual void notify_of_state(std::list<std::shared_ptr<ChildProcessInterface>>) = 0;
+        virtual void notify_of_state(std::list<std::weak_ptr<ChildProcessInterface>>) = 0;
 
         /*
          * Handle a process event. This function is called from the process handler and deals with process state

@@ -162,7 +162,7 @@ namespace scinit {
         reg[primaryPid] = graph_id;
     }
 
-    int ChildProcess::register_with_epoll(int epoll_fd, std::map<int, int>& map) noexcept(false) {
+    void ChildProcess::register_with_epoll(int epoll_fd, std::map<int, int>& map) noexcept(false) {
         struct epoll_event setup{};
         setup.data.fd = stdouterr[0];
         setup.events = EPOLLIN;
@@ -180,7 +180,7 @@ namespace scinit {
         return state == READY;
     }
 
-    void ChildProcess::notify_of_state(std::list<std::shared_ptr<ChildProcessInterface>> other_procs) noexcept {
+    void ChildProcess::notify_of_state(std::list<std::weak_ptr<ChildProcessInterface>> other_procs) noexcept {
         if (state == BLOCKED) {
             // TODO: Implement
         }

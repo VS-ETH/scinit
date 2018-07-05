@@ -32,7 +32,7 @@ namespace scinit {
         virtual ConfigInterface& operator=(const ConfigInterface&) = delete;
 
         // Get a list of _all_ processes
-        virtual std::list<std::shared_ptr<CTYPE>> get_processes() const noexcept = 0;
+        virtual std::list<std::weak_ptr<CTYPE>> get_processes() const noexcept = 0;
     };
 }
 
