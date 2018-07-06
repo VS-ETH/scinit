@@ -20,6 +20,7 @@
 #include <sys/epoll.h>
 #include <sys/prctl.h>
 #include <unistd.h>
+#include <cerrno>
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -84,6 +85,7 @@ namespace scinit {
         if (rc != 0) {
             std::cerr << "Couldn't set capabilities, some features might not work as intended!" << std::endl;
         }
+        cap_free(new_caps_transitional);
 
         // Step 2: Make sure that the child process only retains the capabilities explicitly specified
         // Clear all ambient capabielities and
@@ -120,6 +122,7 @@ namespace scinit {
         if (rc != 0) {
             std::cerr << "Couldn't set capabilities, some features might not work as intended!" << std::endl;
         }
+        cap_free(new_caps);
     }
 
     void ChildProcess::do_fork(std::map<int, unsigned int>& reg) noexcept(false) {
@@ -135,8 +138,14 @@ namespace scinit {
 
         primaryPid = fork();
         if (primaryPid == 0) {
-            // This is the child that's supposed to exec
-            // Note: This block will never return
+            /* This is the child that's supposed to exec
+             *
+             * Note: This block will never return
+             *
+             * Since it will never return the destructors of the strings (arguments and name)
+             * will never be called, nor will the strings be used again. It is therefore acceptable
+             * to remove the const from c_str() and pass them directly to execvp
+             */
 
             // Redirect stdout and stderr to pipe
             while (dup2(stdouterr[1], STDOUT_FILENO) == -1 && errno == EINTR) {
@@ -153,10 +162,8 @@ namespace scinit {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
             c_args[0] = const_cast<char*>(program);
             for (auto& arg : this->args) {
-                // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-                auto buf = new char[arg.length() + 1];
-                std::strncpy(buf, arg.c_str(), arg.length());
-                c_args[i] = buf;
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
+                c_args[i] = const_cast<char*>(arg.c_str());
                 i++;
             }
             c_args[i] = nullptr;

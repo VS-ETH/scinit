@@ -30,7 +30,7 @@
 #define MAX_EVENTS 10
 #define BUF_SIZE 4096
 
-scinit::Config<scinit::ChildProcessInterface>* handle_commandline_invocation(
+std::unique_ptr<scinit::Config<scinit::ChildProcessInterface>> handle_commandline_invocation(
   int argc, char** argv, const std::shared_ptr<scinit::ProcessHandlerInterface>& handler) noexcept(false) {
     po::options_description desc("Options");
     desc.add_options()("help", "print this message")("config", po::value<std::string>()->default_value("config.yml"),
@@ -67,9 +67,9 @@ scinit::Config<scinit::ChildProcessInterface>* handle_commandline_invocation(
                 files.push_back(file.path().native());
             }
         }
-        return new scinit::Config<scinit::ChildProcessInterface>(files, handler);
+        return std::make_unique<scinit::Config<scinit::ChildProcessInterface>>(files, handler);
     }
-    return new scinit::Config<scinit::ChildProcessInterface>(config, handler);
+    return std::make_unique<scinit::Config<scinit::ChildProcessInterface>>(config, handler);
 }
 
 int main(int argc, char** argv) {
