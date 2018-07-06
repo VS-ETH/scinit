@@ -34,7 +34,7 @@ namespace scinit {
                                std::list<std::string> before, std::list<std::string> after)
       : name(std::move(name)), path(std::move(path)), args(std::move(args)), capabilities(std::move(capabilities)),
         uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)) {
-        if (before.empty() && after.empty()) {
+        if (this->before.empty() && this->after.empty()) {
             this->state = READY;
         } else {
             this->state = BLOCKED;

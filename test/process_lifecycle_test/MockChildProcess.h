@@ -25,9 +25,9 @@ namespace scinit {
         namespace lifecycle {
             class MockChildProcess : public ChildProcess {
               public:
-                MockChildProcess(std::string name, std::string path, std::list<std::string> args, std::string type,
+                MockChildProcess(std::string name, std::string path, std::list<std::string> args, const std::string& type,
                                  std::list<std::string> capabilities, unsigned int uid, unsigned int gid,
-                                 unsigned int graph_id, std::shared_ptr<ProcessHandlerInterface> handler,
+                                 unsigned int graph_id, const std::shared_ptr<ProcessHandlerInterface>& handler,
                                  std::list<std::string> before, std::list<std::string> after)
                   : ChildProcess(std::move(name), std::move(path), std::move(args), std::move(type),
                                  std::move(capabilities), uid, gid, graph_id, std::move(handler), std::move(before),
