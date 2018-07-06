@@ -22,11 +22,7 @@ jobs:
           command: mkdir build && cd build && cmake .. && make -j4 && make format
       - run:
           name: Check code format
-          command: |
-            if [ -n $(git diff --name-only | grep -E "^(src|test).*(.cpp$|.h)$") ] ; then \
-            echo "ERROR: Inconsistent formatting, please fix files and resubmit" ; \
-            git diff --name-only | grep -E "^(src|test).*(.cpp$|.h)$" | xargs git diff ; return 255 ;\
-            fi
+          command: .circleci/check-format.sh
       - run:
           name: extract Debian 9 libs for ubuntu 14.04 testrunner
           command: |
