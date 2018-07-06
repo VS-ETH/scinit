@@ -17,26 +17,24 @@
 #ifndef CINIT_PROCESSHANDLERINTERFACE_H
 #define CINIT_PROCESSHANDLERINTERFACE_H
 
-#include <memory>
 #include <boost/signals2.hpp>
+#include <memory>
 
 namespace scinit {
     class ChildProcessInterface;
 
     class ProcessHandlerInterface {
-    public:
-        // Somebody defines SIGHUP, so let's remove that for the enum
+      public:
+// Somebody defines SIGHUP, so let's remove that for the enum
 #define TMP_SIGHUP SIGHUP
 #undef SIGHUP
         /*
          * Event notifier reasons: SIGHUP received or process exitted
          */
-        enum ProcessEvent {
-            SIGHUP,
-            EXIT
-        };
+        enum ProcessEvent { SIGHUP, EXIT };
 #define SIGHUP TMP_SIGHUP
         ProcessHandlerInterface() = default;
+        virtual ~ProcessHandlerInterface() = default;
         // No copy
         ProcessHandlerInterface(const ProcessHandlerInterface&) = delete;
         virtual ProcessHandlerInterface& operator=(const ProcessHandlerInterface&) = delete;
@@ -62,6 +60,6 @@ namespace scinit {
          */
         virtual int enter_eventloop() = 0;
     };
-}
+}  // namespace scinit
 
-#endif //CINIT_PROCESSHANDLERINTERFACE_H
+#endif  // CINIT_PROCESSHANDLERINTERFACE_H

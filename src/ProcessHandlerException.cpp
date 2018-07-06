@@ -17,15 +17,9 @@
 #include "ProcessHandlerException.h"
 
 namespace scinit {
-    ProcessHandlerException::ProcessHandlerException(const char* what) noexcept {
-        this->reason = std::string(what);
-    }
+    ProcessHandlerException::ProcessHandlerException(const char* what) noexcept { this->reason = std::string(what); }
 
-    ProcessHandlerException::ProcessHandlerException() noexcept {
-        this->reason = std::string();
-    }
+    ProcessHandlerException::ProcessHandlerException() noexcept { this->reason = std::string(); }
 
-    const char* ProcessHandlerException::what() const noexcept {
-        return this->reason.c_str();
-    }
-}
+    const char* ProcessHandlerException::what() const noexcept { return this->reason.c_str(); }
+}  // namespace scinit

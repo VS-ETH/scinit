@@ -17,15 +17,17 @@
 #ifndef CINIT_CONFIGINTERFACE_H
 #define CINIT_CONFIGINTERFACE_H
 
-#include <memory>
 #include <list>
+#include <memory>
 
 namespace scinit {
     class ChildProcessInterface;
 
-    template <class CTYPE> class ConfigInterface {
-    public:
+    template <class CTYPE>
+    class ConfigInterface {
+      public:
         ConfigInterface() = default;
+        virtual ~ConfigInterface() = default;
 
         // No copy
         ConfigInterface(const ConfigInterface&) = delete;
@@ -34,7 +36,6 @@ namespace scinit {
         // Get a list of _all_ processes
         virtual std::list<std::weak_ptr<CTYPE>> get_processes() const noexcept = 0;
     };
-}
+}  // namespace scinit
 
-
-#endif //CINIT_CONFIGINTERFACE_H
+#endif  // CINIT_CONFIGINTERFACE_H

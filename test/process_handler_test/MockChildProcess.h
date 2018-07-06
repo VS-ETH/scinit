@@ -25,21 +25,21 @@ namespace scinit {
     namespace test {
         namespace handler {
             class MockChildProcess : public ChildProcessInterface {
-            public:
+              public:
                 MOCK_CONST_METHOD0(get_name, std::string());
                 MOCK_CONST_METHOD0(get_id, unsigned int());
                 MOCK_CONST_METHOD0(can_start_now, bool());
                 MOCK_METHOD1(notify_of_state, void(std::map<unsigned int, std::weak_ptr<ChildProcessInterface>>));
                 MOCK_METHOD1(propagate_dependencies, void(std::list<std::weak_ptr<ChildProcessInterface>>));
                 MOCK_METHOD2(handle_process_event, void(ProcessHandlerInterface::ProcessEvent, int));
-                MOCK_METHOD2(should_wait_for, void(int, ProcessState));
+                MOCK_METHOD2(should_wait_for, void(unsigned int, ProcessState));
                 MOCK_CONST_METHOD0(get_state, ProcessState());
 
-                MOCK_METHOD1(do_fork, void(std::map<int, int> &));
-                MOCK_METHOD2(register_with_epoll, void(int, std::map<int, int> & ));
+                MOCK_METHOD1(do_fork, void(std::map<int, unsigned int> &));
+                MOCK_METHOD2(register_with_epoll, void(int, std::map<int, unsigned int> &));
             };
         }
     }
 }  // namespace scinit
 
-#endif //CINIT_MOCKCHILDPROCESS_HANDLER_H
+#endif  // CINIT_MOCKCHILDPROCESS_HANDLER_H

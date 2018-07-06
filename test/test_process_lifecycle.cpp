@@ -16,8 +16,8 @@
 
 #include "../src/ProcessHandler.h"
 #include "../src/log.h"
-#include "process_lifecycle_test/MockChildProcess.h"
 #include "MockEventHandlers.h"
+#include "process_lifecycle_test/MockChildProcess.h"
 
 using ::testing::Invoke;
 using ::testing::_;
@@ -25,9 +25,9 @@ using namespace scinit::test::lifecycle;
 
 namespace scinit {
     class ProcessLifecycleTests : public testing::Test {
-    protected:
+      protected:
         std::list<std::function<void(void)>> cleanup_functions;
-        void SetUp() {
+        void SetUp() override {
             if (!spdlog::get("scinit")) {
                 auto console = spdlog::stdout_color_st("scinit");
                 console->set_pattern("[%^%n%$] [%H:%M:%S.%e] [%l] %v");
@@ -35,39 +35,41 @@ namespace scinit {
             }
         }
 
-        void TearDown() {
+        void TearDown() override {
             spdlog::drop_all();
-            for (auto fun: cleanup_functions)
+            for (auto fun : cleanup_functions)
                 fun();
         }
 
-        void expect_normal_run_for_child(std::shared_ptr<MockChildProcess> child,
+        void expect_normal_run_for_child(const std::shared_ptr<MockChildProcess>& child,
                                          const std::shared_ptr<ProcessHandler>& handler, int pid) {
-            MockEventHandlers *signal_event = new MockEventHandlers(),
-                    *fork_event = new MockEventHandlers(),
-                    *register_event = new MockEventHandlers();
+            MockEventHandlers *signal_event = new MockEventHandlers(), *fork_event = new MockEventHandlers(),
+                              *register_event = new MockEventHandlers();
             // Child 1 mock
             EXPECT_CALL(*fork_event, call_once()).Times(1);
-            EXPECT_CALL(*child, do_fork(_)).Times(1).WillOnce(Invoke([fork_event, &child, pid]
-                                                                             (std::map<int, int>& reg) {
-                fork_event->call_once();
-                EXPECT_EQ(child->state, ChildProcessInterface::ProcessState::READY);
-                child->state = ChildProcessInterface::ProcessState::RUNNING;
-                child->primaryPid = 0;
-                reg[pid] = child->get_id();
-            }));
+            EXPECT_CALL(*child, do_fork(_))
+              .Times(1)
+              .WillOnce(Invoke([fork_event, &child, pid](std::map<int, unsigned int>& reg) {
+                  fork_event->call_once();
+                  EXPECT_EQ(child->state, ChildProcessInterface::ProcessState::READY);
+                  child->state = ChildProcessInterface::ProcessState::RUNNING;
+                  child->primaryPid = 0;
+                  reg[pid] = child->get_id();
+              }));
             EXPECT_CALL(*register_event, call_once()).Times(1);
-            EXPECT_CALL(*child, register_with_epoll(_, _)).Times(1).WillOnce(Invoke([register_event](int epoll_fd,
-                                                                                           std::map<int, int>& map) {
-                register_event->call_once();
-                map[0] = 0;
-            }));
+            EXPECT_CALL(*child, register_with_epoll(_, _))
+              .Times(1)
+              .WillOnce(Invoke([register_event](int, std::map<int, unsigned int>& map) {
+                  register_event->call_once();
+                  map[0] = 0;
+              }));
             EXPECT_CALL(*signal_event, call_once()).Times(1);
-            handler->register_for_process_state(0, [signal_event](ProcessHandlerInterface::ProcessEvent event, int result) {
-                signal_event->call_once();
-                EXPECT_EQ(event, ProcessHandlerInterface::ProcessEvent::EXIT);
-                EXPECT_EQ(result, 0);
-            });
+            handler->register_for_process_state(
+              0, [signal_event](ProcessHandlerInterface::ProcessEvent event, int result) {
+                  signal_event->call_once();
+                  EXPECT_EQ(event, ProcessHandlerInterface::ProcessEvent::EXIT);
+                  EXPECT_EQ(result, 0);
+              });
             cleanup_functions.emplace_back([signal_event, fork_event, register_event]() {
                 delete signal_event;
                 delete fork_event;
@@ -80,8 +82,8 @@ namespace scinit {
         auto handler = std::make_shared<ProcessHandler>();
 
         std::list<std::string> args, capabilities, before, after;
-        auto child_1 = std::make_shared<MockChildProcess>("mockproc", "/bin/false", args, "SIMPLE", capabilities,
-                65534, 65534, 0, handler, before, after);
+        auto child_1 = std::make_shared<MockChildProcess>("mockproc", "/bin/false", args, "SIMPLE", capabilities, 65534,
+                                                          65534, 0, handler, before, after);
         handler->obj_for_id[0] = child_1;
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
         all_children.push_back(child_1);
@@ -103,8 +105,8 @@ namespace scinit {
         auto handler = std::make_shared<ProcessHandler>();
 
         std::list<std::string> args, capabilities, child_1_before, child_1_after, child_2_before, child_2_after;
-        child_2_before.push_back("mockprocA");
-        child_1_after.push_back("mockprocB");
+        child_2_before.emplace_back("mockprocA");
+        child_1_after.emplace_back("mockprocB");
         auto child_1 = std::make_shared<MockChildProcess>("mockprocA", "/bin/false", args, "SIMPLE", capabilities,
                                                           65534, 65534, 0, handler, child_1_before, child_1_after);
         auto child_2 = std::make_shared<MockChildProcess>("mockprocB", "/bin/false", args, "SIMPLE", capabilities,
@@ -112,8 +114,8 @@ namespace scinit {
         handler->obj_for_id[0] = child_1;
         handler->obj_for_id[1] = child_2;
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
-        all_children.push_back(child_1);
-        all_children.push_back(child_2);
+        all_children.emplace_back(child_1);
+        all_children.emplace_back(child_2);
 
         expect_normal_run_for_child(child_1, handler, 0);
         expect_normal_run_for_child(child_2, handler, 1);
@@ -144,4 +146,4 @@ namespace scinit {
         EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::DONE);
         EXPECT_EQ(handler->number_of_running_procs, 0);
     }
-}
+}  // namespace scinit

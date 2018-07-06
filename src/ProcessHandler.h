@@ -17,37 +17,38 @@
 #ifndef CINIT_PROCESSHANDLER_H
 #define CINIT_PROCESSHANDLER_H
 
-#include "ProcessHandlerInterface.h"
 #include "gtest/gtest_prod.h"
+#include "ProcessHandlerInterface.h"
 
 namespace scinit {
-
     // See base class for documentation
     class ProcessHandler : public ProcessHandlerInterface {
-    public:
+      public:
         ProcessHandler() = default;
+        ~ProcessHandler() override = default;
         ProcessHandler(const ProcessHandler&) = delete;
         virtual ProcessHandler& operator=(const ProcessHandler&) = delete;
 
         void register_processes(std::list<std::weak_ptr<ChildProcessInterface>>&) override;
-        void register_for_process_state(int id, std::function<void(ProcessHandlerInterface::ProcessEvent, int)> handler)
-                                            override;
+        void register_for_process_state(
+          int id, std::function<void(ProcessHandlerInterface::ProcessEvent, int)> handler) override;
         void register_obj_id(int, std::weak_ptr<ChildProcessInterface>) override;
         int enter_eventloop() override;
 
-    private:
-        std::map<int, boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>*> sig_for_id;
+      private:
+        std::map<int, std::shared_ptr<boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>>>
+          sig_for_id;
         std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> obj_for_id;
-        std::map<int, int> id_for_pid;
-        std::map<int, int> id_for_fd;
+        std::map<int, unsigned int> id_for_pid;
+        std::map<int, unsigned int> id_for_fd;
         std::list<std::weak_ptr<ChildProcessInterface>> all_objs;
-        int epoll_fd = -1, signal_fd = -1 , number_of_running_procs = 0;
+        int epoll_fd = -1, signal_fd = -1, number_of_running_procs = 0;
         bool should_quit = false;
 
         void setup_signal_handlers();
         void start_programs();
         void event_received(int fd, unsigned int event);
-        void signal_received(int signal);
+        void signal_received(unsigned int signal);
         void sigchld_received(int pid, int rc);
 
         FRIEND_TEST(ProcessHandlerTests, TestOneRunnableChild);
@@ -55,6 +56,6 @@ namespace scinit {
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
     };
-}
+}  // namespace scinit
 
-#endif //CINIT_PROCESSHANDLER_H
+#endif  // CINIT_PROCESSHANDLER_H

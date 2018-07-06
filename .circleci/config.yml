@@ -13,8 +13,16 @@ jobs:
           name: checkout submodules
           command: git submodule update --init
       - run:
+          name: Fail on clang-tidy warnings
+          command: |
+            sed "s/WarningsAsErrors: ''/WarningsAsErrors: '*'/g" -i .clang-tidy && \
+            cat .clang-tidy | grep WarningsAsErrors
+      - run:
           name: build
-          command: mkdir build && cd build && cmake .. && make -j4
+          command: mkdir build && cd build && cmake .. && make -j4 && make format
+      - run:
+          name: Check code format
+          command: .circleci/check-format.sh
       - run:
           name: extract Debian 9 libs for ubuntu 14.04 testrunner
           command: |
@@ -47,8 +55,6 @@ jobs:
             for i in * ; do export DIR=$(echo $i|sed 's/_tests.xml//g') && mkdir ../$DIR ; cp $i ../$DIR ; done && \
             cd .. && \
             rm -Rf test
-          #ctest -T Test --output-on-failure || /bin/true && \
-          #xsltproc ../3rdparty/transform-test.xslt Testing/2*/*.xml > ../unittests/config-test/test.xml
       - store_test_results:
           path: /tmp/build/unittests
   smoke-test:

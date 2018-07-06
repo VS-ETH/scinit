@@ -17,48 +17,48 @@
 #ifndef CINIT_CHILDPROCESS_H
 #define CINIT_CHILDPROCESS_H
 
-#include <string>
+#include "gtest/gtest_prod.h"
 #include <list>
 #include <map>
-#include "gtest/gtest_prod.h"
-#include "ProcessHandlerInterface.h"
+#include <string>
 #include "ChildProcessInterface.h"
+#include "ProcessHandlerInterface.h"
 
 namespace scinit {
     class ProcessLifecycleTests;
 
     // See base class for documentation
     class ChildProcess : public ChildProcessInterface {
-    public:
-        ChildProcess(const std::string&, const std::string &, const std::list<std::string> &, const std::string &,
-                     const std::list<std::string> &, unsigned int, unsigned int, unsigned int,
-                     std::shared_ptr<ProcessHandlerInterface>, const std::list<std::string> &,
-                     const std::list<std::string> &);
+      public:
+        ChildProcess(std::string, std::string, std::list<std::string>, const std::string &, std::list<std::string>,
+                     unsigned int, unsigned int, unsigned int, const std::shared_ptr<ProcessHandlerInterface> &,
+                     std::list<std::string>, std::list<std::string>);
 
-        ChildProcess(const ChildProcess&) = delete;
-        virtual ChildProcess& operator=(const ChildProcess&) = delete;
+        ChildProcess(const ChildProcess &) = delete;
+        virtual ChildProcess &operator=(const ChildProcess &) = delete;
+        virtual ~ChildProcess() = default;
 
-        void do_fork(std::map<int, int>&) noexcept(false) override;
-        void register_with_epoll(int, std::map<int, int>&) noexcept(false) override;
+        void do_fork(std::map<int, unsigned int> &) noexcept(false) override;
+        void register_with_epoll(int, std::map<int, unsigned int> &) noexcept(false) override;
         std::string get_name() const noexcept override;
         unsigned int get_id() const noexcept override;
         bool can_start_now() const noexcept override;
         void notify_of_state(std::map<unsigned int, std::weak_ptr<ChildProcessInterface>>) noexcept override;
         void propagate_dependencies(std::list<std::weak_ptr<ChildProcessInterface>>) noexcept override;
-        void should_wait_for(int, ProcessState) noexcept override;
+        void should_wait_for(unsigned int, ProcessState) noexcept override;
         void handle_process_event(ProcessHandlerInterface::ProcessEvent event, int data) noexcept override;
-        ProcessState get_state() const noexcept override ;
+        ProcessState get_state() const noexcept override;
 
-    private:
-        std::string path, name;
-        std::list<std::string> args, capabilities, before, after;
-        std::list<std::pair<unsigned int, ChildProcessInterface::ProcessState>> conditions;
+      private:
+        std::string name, path;
+        std::list<std::string> args, capabilities;
         unsigned int uid, gid, graph_id;
-        int stdouterr[2], primaryPid;
+        std::shared_ptr<ProcessHandlerInterface> handler;
+        std::list<std::string> before, after;
+        std::list<std::pair<unsigned int, ChildProcessInterface::ProcessState>> conditions;
+        int stdouterr[2] = {-1, -1}, primaryPid = -1;
         ProcessType type;
         ProcessState state;
-        std::shared_ptr<ProcessHandlerInterface> handler;
-
         void handle_caps();
 
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
@@ -68,6 +68,6 @@ namespace scinit {
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
         friend class ProcessLifecycleTests;
     };
-}
+}  // namespace scinit
 
-#endif //CINIT_CHILDPROCESS_H
+#endif  // CINIT_CHILDPROCESS_H

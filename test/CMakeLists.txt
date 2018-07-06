@@ -32,4 +32,6 @@ add_executable(process_lifecycle_tests ${ABS_SCINIT_SOURCE_FILES} test_process_l
 target_link_libraries(process_lifecycle_tests yaml-cpp pthread cap gmock_main ${Boost_LIBRARIES})
 
 # Make unit tests available to 'make test'
-gtest_add_tests(TARGET config_tests SOURCES test_config_parser.cpp test_process_handler.cpp test_process_lifecycle.cpp)
+gtest_add_tests(TARGET config_tests SOURCES test_config_parser.cpp)
+gtest_add_tests(TARGET process_handler_tests SOURCES test_process_handler.cpp)
+gtest_add_tests(TARGET process_lifecycle_tests SOURCES test_process_lifecycle.cpp)

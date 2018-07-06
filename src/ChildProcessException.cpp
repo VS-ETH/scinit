@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-#include <string>
 #include "ChildProcessException.h"
+#include <string>
 
 namespace scinit {
-    ChildProcessException::ChildProcessException(const char* what) noexcept {
-        this->reason = std::string(what);
-    }
+    ChildProcessException::ChildProcessException(const char* what) noexcept { this->reason = std::string(what); }
 
-    const char* ChildProcessException::what() const noexcept {
-        return this->reason.c_str();
-    }
-}
+    const char* ChildProcessException::what() const noexcept { return this->reason.c_str(); }
+}  // namespace scinit
