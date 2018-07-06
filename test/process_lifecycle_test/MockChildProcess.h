@@ -33,8 +33,8 @@ namespace scinit {
                                  std::move(capabilities), uid, gid, graph_id, std::move(handler), std::move(before),
                                  std::move(after)){};
 
-                MOCK_METHOD1(do_fork, void(std::map<int, int> &));
-                MOCK_METHOD2(register_with_epoll, void(int epoll_fd, std::map<int, int> &map));
+                MOCK_METHOD1(do_fork, void(std::map<int, unsigned int> &));
+                MOCK_METHOD2(register_with_epoll, void(int epoll_fd, std::map<int, unsigned int> &map));
             };
         }
     }

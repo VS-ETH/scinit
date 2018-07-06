@@ -41,7 +41,7 @@ namespace scinit {
                 fun();
         }
 
-        void expect_normal_run_for_child(std::shared_ptr<MockChildProcess> child,
+        void expect_normal_run_for_child(const std::shared_ptr<MockChildProcess>& child,
                                          const std::shared_ptr<ProcessHandler>& handler, int pid) {
             MockEventHandlers *signal_event = new MockEventHandlers(), *fork_event = new MockEventHandlers(),
                               *register_event = new MockEventHandlers();
@@ -49,7 +49,7 @@ namespace scinit {
             EXPECT_CALL(*fork_event, call_once()).Times(1);
             EXPECT_CALL(*child, do_fork(_))
               .Times(1)
-              .WillOnce(Invoke([fork_event, &child, pid](std::map<int, int>& reg) {
+              .WillOnce(Invoke([fork_event, &child, pid](std::map<int, unsigned int>& reg) {
                   fork_event->call_once();
                   EXPECT_EQ(child->state, ChildProcessInterface::ProcessState::READY);
                   child->state = ChildProcessInterface::ProcessState::RUNNING;
@@ -59,7 +59,7 @@ namespace scinit {
             EXPECT_CALL(*register_event, call_once()).Times(1);
             EXPECT_CALL(*child, register_with_epoll(_, _))
               .Times(1)
-              .WillOnce(Invoke([register_event](int, std::map<int, int>& map) {
+              .WillOnce(Invoke([register_event](int, std::map<int, unsigned int>& map) {
                   register_event->call_once();
                   map[0] = 0;
               }));
@@ -105,8 +105,8 @@ namespace scinit {
         auto handler = std::make_shared<ProcessHandler>();
 
         std::list<std::string> args, capabilities, child_1_before, child_1_after, child_2_before, child_2_after;
-        child_2_before.push_back("mockprocA");
-        child_1_after.push_back("mockprocB");
+        child_2_before.emplace_back("mockprocA");
+        child_1_after.emplace_back("mockprocB");
         auto child_1 = std::make_shared<MockChildProcess>("mockprocA", "/bin/false", args, "SIMPLE", capabilities,
                                                           65534, 65534, 0, handler, child_1_before, child_1_after);
         auto child_2 = std::make_shared<MockChildProcess>("mockprocB", "/bin/false", args, "SIMPLE", capabilities,
@@ -114,8 +114,8 @@ namespace scinit {
         handler->obj_for_id[0] = child_1;
         handler->obj_for_id[1] = child_2;
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
-        all_children.push_back(child_1);
-        all_children.push_back(child_2);
+        all_children.emplace_back(child_1);
+        all_children.emplace_back(child_2);
 
         expect_normal_run_for_child(child_1, handler, 0);
         expect_normal_run_for_child(child_2, handler, 1);
