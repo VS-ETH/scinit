@@ -41,8 +41,9 @@ namespace scinit {
       public:
         Config(const std::string& path, std::shared_ptr<ProcessHandlerInterface> handler) noexcept(false)
           : handler(handler) {
-            if (fs::is_directory(fs::path(path)))
+            if (fs::is_directory(fs::path(path))) {
                 throw ConfigParseException("This constructor is for single files only!");
+            }
             load_file(path);
             LOG->info("Config loaded");
         }
@@ -54,6 +55,8 @@ namespace scinit {
             }
             LOG->info("Config loaded");
         }
+
+        ~Config() override = default;
 
         std::list<std::weak_ptr<CTYPE>> get_processes() const noexcept override {
             return std::accumulate(processes.begin(), processes.end(), std::list<std::weak_ptr<CTYPE>>(),
@@ -70,8 +73,9 @@ namespace scinit {
         void load_file(const std::string& file) noexcept(false) {
             auto root = YAML::LoadFile(file);
 
-            if (!root["programs"])
+            if (!root["programs"]) {
                 throw ConfigParseException("Config file is missing the 'programs' node!");
+            }
 
             LOG->debug("Dump\n{0}", root);
             parse_file(root);
@@ -81,8 +85,9 @@ namespace scinit {
             std::list<std::string> list;
             if ((*root)[node_name]) {
                 YAML::Node node = (*root)[node_name];
-                for (auto str : node)
+                for (auto str : node) {
                     list.push_back(str.as<std::string>());
+                }
             }
             return std::move(list);
         }

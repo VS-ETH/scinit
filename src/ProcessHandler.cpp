@@ -37,9 +37,10 @@ namespace scinit {
 
     void ProcessHandler::register_for_process_state(
       int id, std::function<void(ProcessHandlerInterface::ProcessEvent, int)> handler) {
-        if (sig_for_id.count(id) == 0)
+        if (sig_for_id.count(id) == 0) {
             sig_for_id.insert(
-              std::make_pair(id, new boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>()));
+              std::make_pair(id, std::make_shared<boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>>()));
+        }
         auto signal = sig_for_id[id];
         signal->connect(handler);
     }
@@ -84,17 +85,23 @@ namespace scinit {
 
                 // Strip leading and trailing newlines
                 ssize_t begin = 0;
-                for (; begin < nchars; begin++)
-                    if (buf[begin] != '\n')
+                for (; begin < nchars; begin++) {
+                    if (buf[begin] != '\n') {
                         break;
+                    }
+                }
                 ssize_t end = nchars - 1;
-                for (; end > begin; end--)
-                    if (buf[end] != '\n')
+                for (; end > begin; end--) {
+                    if (buf[end] != '\n') {
                         break;
-                if (begin > 0)
-                    str = str.substr(static_cast<unsigned long>(begin));
-                if (end < nchars - 1 && end >= begin && begin >= 0)
+                    }
+                }
+                if (begin > 0) {
+                    str = str.substr(static_cast<uint64_t>(begin));
+                }
+                if (end < nchars - 1 && end >= begin && begin >= 0) {
                     str = str.substr(0, static_cast<uint64_t>(end - begin + 1));
+                }
 
                 // If there is something left, output it
                 if (!str.empty()) {
@@ -223,8 +230,9 @@ namespace scinit {
     void ProcessHandler::start_programs() {
         for (const auto& weak_program : all_objs) {
             if (auto program = weak_program.lock()) {
-                if (!program->can_start_now())
+                if (!program->can_start_now()) {
                     continue;
+                }
                 try {
                     // Register logger
                     auto console = spdlog::stdout_color_st(program->get_name());

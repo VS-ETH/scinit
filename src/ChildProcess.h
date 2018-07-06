@@ -36,6 +36,7 @@ namespace scinit {
 
         ChildProcess(const ChildProcess &) = delete;
         virtual ChildProcess &operator=(const ChildProcess &) = delete;
+        virtual ~ChildProcess() = default;
 
         void do_fork(std::map<int, unsigned int> &) noexcept(false) override;
         void register_with_epoll(int, std::map<int, unsigned int> &) noexcept(false) override;

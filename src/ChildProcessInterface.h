@@ -28,6 +28,7 @@ namespace scinit {
         // Do not copy ;)
         ChildProcessInterface(const ChildProcessInterface&) = delete;
         virtual ChildProcessInterface& operator=(const ChildProcessInterface&) = delete;
+        virtual ~ChildProcessInterface() = default;
 
         /*
          * What kind of process is this? ONESHOT is for programs that do something and then exit and should not be

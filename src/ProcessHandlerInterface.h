@@ -34,6 +34,7 @@ namespace scinit {
         enum ProcessEvent { SIGHUP, EXIT };
 #define SIGHUP TMP_SIGHUP
         ProcessHandlerInterface() = default;
+        virtual ~ProcessHandlerInterface() = default;
         // No copy
         ProcessHandlerInterface(const ProcessHandlerInterface&) = delete;
         virtual ProcessHandlerInterface& operator=(const ProcessHandlerInterface&) = delete;

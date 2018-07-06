@@ -28,6 +28,8 @@ endif()
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -Wextra -Werror")
 endif()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include(GoogleTest)
 enable_testing()
 

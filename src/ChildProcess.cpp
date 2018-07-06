@@ -34,10 +34,11 @@ namespace scinit {
                                std::list<std::string> before, std::list<std::string> after)
       : name(std::move(name)), path(std::move(path)), args(std::move(args)), capabilities(std::move(capabilities)),
         uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)) {
-        if (before.empty() && after.empty())
+        if (before.empty() && after.empty()) {
             this->state = READY;
-        else
+        } else {
             this->state = BLOCKED;
+        }
 
         if (type == "simple") {
             this->type = SIMPLE;
@@ -55,8 +56,9 @@ namespace scinit {
         // Step 1: Make sure that the this process has all caps that we need
         std::string cap_string = "CAP_SETUID=eip CAP_SETGID=eip CAP_SETPCAP=eip";
         cap_t new_caps_transitional;
-        for (const auto& capability : capabilities)
+        for (const auto& capability : capabilities) {
             cap_string += " " + capability + "=eip";
+        }
         const char* c_cap_string = cap_string.c_str();
         new_caps_transitional = cap_from_text(c_cap_string);
 
@@ -69,10 +71,12 @@ namespace scinit {
         // NOLINTNEXTLINE(hicpp-vararg)
         prctl(PR_SET_KEEPCAPS, 1);
         // Set user and group
-        if (setgid(this->gid) == -1)
+        if (setgid(this->gid) == -1) {
             std::cerr << "Couldn't set group!" << std::endl;
-        if (setuid(this->uid) == -1)
+        }
+        if (setuid(this->uid) == -1) {
             std::cerr << "Couldn't set user!" << std::endl;
+        }
         // NOLINTNEXTLINE(hicpp-vararg)
         prctl(PR_SET_KEEPCAPS, 0);
 
@@ -119,8 +123,9 @@ namespace scinit {
     }
 
     void ChildProcess::do_fork(std::map<int, unsigned int>& reg) noexcept(false) {
-        if (state != READY)
+        if (state != READY) {
             throw ChildProcessException("Process not ready, cannot fork now!");
+        }
 
         if (pipe(static_cast<int*>(stdouterr)) == -1) {
             throw ChildProcessException("Couldn't create pipe!");
@@ -142,10 +147,13 @@ namespace scinit {
 
             // Transform args
             const char* program = this->path.c_str();
+            // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
             auto c_args = new char*[this->args.size() + 2];
             int i = 1;
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
             c_args[0] = const_cast<char*>(program);
             for (auto& arg : this->args) {
+                // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
                 auto buf = new char[arg.length() + 1];
                 std::strncpy(buf, arg.c_str(), arg.length());
                 c_args[i] = buf;
@@ -186,14 +194,17 @@ namespace scinit {
     void ChildProcess::should_wait_for(unsigned int other_process, ProcessState other_state) noexcept {
         bool contains =
           std::accumulate(conditions.begin(), conditions.end(), false, [other_process](bool contains, auto pair) {
-              if (contains)
+              if (contains) {
                   return true;
-              if (pair.first == other_process)
+              }
+              if (pair.first == other_process) {
                   return true;
+              }
               return false;
           });
-        if (!contains)
+        if (!contains) {
             conditions.emplace_back(std::make_pair(other_process, other_state));
+        }
     }
 
     void ChildProcess::propagate_dependencies(
@@ -202,18 +213,19 @@ namespace scinit {
             for (const auto& weak_ref : other_processes) {
                 if (auto ref = weak_ref.lock()) {
                     if (ref->get_name() == dependency) {
-                        if (other_or_this)
+                        if (other_or_this) {
                             ref->should_wait_for(classref->graph_id,
                                                  classref->type == SIMPLE ? ProcessState::DONE : ProcessState::RUNNING);
-                        else
+                        } else {
                             classref->should_wait_for(
                               ref->get_id(), classref->type == SIMPLE ? ProcessState::DONE : ProcessState::RUNNING);
+                        }
                     }
                 }
             }
         };
-        std::for_each(before.begin(), before.end(), [&func, this](auto arg) { func(arg, true); });
-        std::for_each(after.begin(), after.end(), [&func, this](auto arg) { func(arg, false); });
+        std::for_each(before.begin(), before.end(), [&func](auto arg) { func(arg, true); });
+        std::for_each(after.begin(), after.end(), [&func](auto arg) { func(arg, false); });
         before.clear();
         after.clear();
     }
@@ -224,9 +236,10 @@ namespace scinit {
       std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> other_procs) noexcept {
         if (state == BLOCKED) {
             bool still_blocked = std::accumulate(
-              conditions.begin(), conditions.end(), false, [&other_procs, this](bool blocked, auto condition) {
-                  if (blocked)
+              conditions.begin(), conditions.end(), false, [&other_procs](bool blocked, auto condition) {
+                  if (blocked) {
                       return true;
+                  }
                   if (!other_procs.count(condition.first)) {
                       LOG->critical("BUG: Found reference to process that doesn't exist");
                       return true;
@@ -237,8 +250,9 @@ namespace scinit {
                   LOG->critical("BUG: Found reference to process that doesn't exist anymore");
                   return true;
               });
-            if (!still_blocked)
+            if (!still_blocked) {
                 state = READY;
+            }
         }
     }
 
@@ -250,10 +264,11 @@ namespace scinit {
                 if (state != RUNNING) {
                     LOG->warn("Child process object in state {0} notified of exit?", state);
                 }
-                if (data == 0)
+                if (data == 0) {
                     state = DONE;
-                else
+                } else {
                     state = CRASHED;
+                }
                 break;
         }
     }

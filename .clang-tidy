@@ -1,6 +1,6 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,-*,clang-analyzer-*,hicpp-*,google-*,boost-*,bugprone-*,cert-*,misc-*,modernize-*,llvm-*,readability-*,portability-*,performance-*,-readability-implicit-bool-conversion,-readability-braces-around-statements,-hicpp-braces-around-statements,-google-readability-braces-around-statements,-llvm-include-order,-clang-analyzer-alpha*'
-WarningsAsErrors: '*'
+Checks:          '-*,boost-*,bugprone-*,cert-*,cppcoreguidelines-*,clang-*,fuchsia-*,google-*,hicpp-*,llvm-*,misc-*,modernize-*,performance-*,portability-*,readability-*,-readability-implicit-bool-conversion,-hicpp-braces-around-statements,-google-readability-braces-around-statements,-fuchsia-default-arguments,-cppcoreguidelines-pro-type-vararg,-llvm-include-order,-zircon,-cppcoreguidelines-pro-bounds-constant-array-index,-clang-analyzer-alpha*'
+WarningsAsErrors: ''
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     none

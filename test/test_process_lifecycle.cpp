@@ -27,7 +27,7 @@ namespace scinit {
     class ProcessLifecycleTests : public testing::Test {
       protected:
         std::list<std::function<void(void)>> cleanup_functions;
-        void SetUp() {
+        void SetUp() override {
             if (!spdlog::get("scinit")) {
                 auto console = spdlog::stdout_color_st("scinit");
                 console->set_pattern("[%^%n%$] [%H:%M:%S.%e] [%l] %v");
@@ -35,7 +35,7 @@ namespace scinit {
             }
         }
 
-        void TearDown() {
+        void TearDown() override {
             spdlog::drop_all();
             for (auto fun : cleanup_functions)
                 fun();

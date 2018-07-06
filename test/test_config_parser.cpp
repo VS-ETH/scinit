@@ -29,7 +29,7 @@ namespace scinit {
       protected:
         fs::path test_resource;
 
-        void SetUp() {
+        void SetUp() override {
             test_resource = fs::path(__FILE__);
             ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Path to source does not point to a regular file";
             test_resource.remove_filename();
@@ -81,8 +81,9 @@ namespace scinit {
         ASSERT_TRUE(fs::is_directory(test_resource)) << "Test resource missing";
         std::list<std::string> files;
         for (auto &file : fs::directory_iterator(test_resource)) {
-            if (fs::is_regular(file))
+            if (fs::is_regular(file)) {
                 files.push_back(file.path().native());
+            }
         }
         auto handler = std::make_shared<scinit::ProcessHandler>();
         scinit::Config<ChildProcess> uut(files, handler);

@@ -25,6 +25,7 @@ namespace scinit {
     class ProcessHandler : public ProcessHandlerInterface {
       public:
         ProcessHandler() = default;
+        ~ProcessHandler() override = default;
         ProcessHandler(const ProcessHandler&) = delete;
         virtual ProcessHandler& operator=(const ProcessHandler&) = delete;
 
@@ -35,7 +36,7 @@ namespace scinit {
         int enter_eventloop() override;
 
       private:
-        std::map<int, boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>*> sig_for_id;
+        std::map<int, std::shared_ptr<boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>>> sig_for_id;
         std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> obj_for_id;
         std::map<int, unsigned int> id_for_pid;
         std::map<int, unsigned int> id_for_fd;

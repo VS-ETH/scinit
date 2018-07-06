@@ -27,6 +27,7 @@ namespace scinit {
     class ConfigInterface {
       public:
         ConfigInterface() = default;
+        virtual ~ConfigInterface() = default;
 
         // No copy
         ConfigInterface(const ConfigInterface&) = delete;

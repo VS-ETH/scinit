@@ -47,10 +47,11 @@ scinit::Config<scinit::ChildProcessInterface>* handle_commandline_invocation(
 
     auto console = spdlog::stdout_color_st("scinit");
     console->set_pattern("[%^%n%$] [%H:%M:%S.%e] [%l] %v");
-    if (options["verbose"].as<bool>())
+    if (options["verbose"].as<bool>()) {
         console->set_level(spdlog::level::debug);
-    else
+    } else {
         console->set_level(spdlog::level::info);
+    }
 
     auto config = options["config"].as<std::string>();
     // Check whether 'config' is a file or a directory
@@ -62,8 +63,9 @@ scinit::Config<scinit::ChildProcessInterface>* handle_commandline_invocation(
     if (fs::is_directory(config_path)) {
         std::list<std::string> files;
         for (auto& file : fs::directory_iterator(config_path)) {
-            if (fs::is_regular(file))
+            if (fs::is_regular(file)) {
                 files.push_back(file.path().native());
+            }
         }
         return new scinit::Config<scinit::ChildProcessInterface>(files, handler);
     }
@@ -74,8 +76,9 @@ int main(int argc, char** argv) {
     auto handler = std::make_shared<scinit::ProcessHandler>();
 
     auto conf = handle_commandline_invocation(argc, argv, handler);
-    if (conf == nullptr)
+    if (conf == nullptr) {
         return -1;
+    }
     auto child_list = conf->get_processes();
     handler->register_processes(child_list);
 

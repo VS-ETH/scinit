@@ -27,7 +27,7 @@ using namespace scinit::test::handler;
 namespace scinit {
     class ProcessHandlerTests : public testing::Test {
       protected:
-        void SetUp() {
+        void SetUp() override {
             if (!spdlog::get("scinit")) {
                 auto console = spdlog::stdout_color_st("scinit");
                 console->set_pattern("[%^%n%$] [%H:%M:%S.%e] [%l] %v");
@@ -35,7 +35,7 @@ namespace scinit {
             }
         }
 
-        void TearDown() { spdlog::drop_all(); }
+        void TearDown() override { spdlog::drop_all(); }
     };
 
     TEST_F(ProcessHandlerTests, TestOneRunnableChild) {
