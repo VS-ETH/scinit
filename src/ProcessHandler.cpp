@@ -38,8 +38,8 @@ namespace scinit {
     void ProcessHandler::register_for_process_state(
       int id, std::function<void(ProcessHandlerInterface::ProcessEvent, int)> handler) {
         if (sig_for_id.count(id) == 0) {
-            sig_for_id.insert(
-              std::make_pair(id, std::make_shared<boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>>()));
+            sig_for_id.insert(std::make_pair(
+              id, std::make_shared<boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>>()));
         }
         auto signal = sig_for_id[id];
         signal->connect(handler);
