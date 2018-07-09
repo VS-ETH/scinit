@@ -146,6 +146,32 @@ namespace scinit {
         }
     }
 
+    TEST_F(ConfigParserTests, ConfigWithNamedUser) {
+        test_resource /= "config-with-named-user.yml";
+        ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
+        auto handler = std::make_shared<scinit::ProcessHandler>();
+        scinit::Config<ChildProcess> uut(test_resource.native(), handler);
+        auto procs = uut.get_processes();
+        ASSERT_EQ(procs.size(), 1);
+        for (auto &weak_proc : procs) {
+            if (auto proc = weak_proc.lock()) {
+                if (proc.get()->get_name() == "ping") {
+                    ASSERT_EQ(proc.get()->path, "./ping");
+                    ASSERT_EQ(proc.get()->type, ChildProcess::ProcessType::ONESHOT);
+                    ASSERT_THAT(proc.get()->args, ::testing::ElementsAre("-c 4", "google.ch"));
+                    ASSERT_THAT(proc.get()->capabilities, ::testing::ElementsAre("CAP_NET_RAW"));
+                    // Nobody and nogroup should be the same on every system
+                    ASSERT_EQ(proc.get()->uid, 65534);
+                    ASSERT_EQ(proc.get()->gid, 65534);
+                } else {
+                    FAIL() << "Found unexpected program element";
+                }
+            } else {
+                FAIL() << "Couldn't lock weak_ref!";
+            }
+        }
+    }
+
     TEST_F(ConfigParserTests, InvalidProgramConfig) {
         test_resource /= "invalid-program-config.yml";
         ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";

@@ -17,6 +17,9 @@
 #ifndef CINIT_CONFIG_H
 #define CINIT_CONFIG_H
 
+#include <grp.h>
+#include <pwd.h>
+#include <sys/types.h>
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
@@ -116,11 +119,40 @@ namespace scinit {
                                        after = yaml_node_to_str_list(program, "after");
 
                 int uid = 65534, gid = 65534;
+                bool did_set_numeric = false;
                 if ((*program)["uid"]) {
                     uid = (*program)["uid"].as<int>();
+                    did_set_numeric = true;
                 }
                 if ((*program)["gid"]) {
                     uid = (*program)["gid"].as<int>();
+                    did_set_numeric = true;
+                }
+                if ((*program)["user"]) {
+                    auto user_string = (*program)["user"].as<std::string>();
+                    // ...(Do not pass the returned pointer to free(3).)...
+                    auto user_struct = getpwnam(user_string.c_str());
+                    if (user_struct == nullptr) {
+                        LOG->warn("Couldn't lookup uid of user '{0}', leaving default user!", user_string);
+                    } else {
+                        uid = user_struct->pw_uid;
+                        if (did_set_numeric) {
+                            LOG->warn("Combining explicit (user/group) with numeric (uid/gid) settings");
+                        }
+                    }
+                }
+                if ((*program)["group"]) {
+                    auto group_string = (*program)["group"].as<std::string>();
+                    // ...(Do not pass the returned pointer to free(3).)...
+                    auto group_struct = getgrnam(group_string.c_str());
+                    if (group_struct == nullptr) {
+                        LOG->warn("Couldn't lookup gid of group '{0}', leaving default group!", group_string);
+                    } else {
+                        gid = group_struct->gr_gid;
+                        if (did_set_numeric) {
+                            LOG->warn("Combining explicit (user/group) with numeric (uid/gid) settings");
+                        }
+                    }
                 }
 
                 auto process = std::make_shared<ChildProcess>(
