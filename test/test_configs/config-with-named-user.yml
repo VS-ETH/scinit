@@ -1,0 +1,11 @@
+programs:
+  - name: ping
+    path: ./ping
+    args:
+      - -c 4
+      - google.ch
+    user: nobody
+    group: nogroup
+    type: oneshot
+    capabilities:
+      - CAP_NET_RAW

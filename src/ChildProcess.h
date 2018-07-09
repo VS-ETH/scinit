@@ -64,6 +64,7 @@ namespace scinit {
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
         FRIEND_TEST(ConfigParserTests, SimpleConfDTest);
         FRIEND_TEST(ConfigParserTests, ConfigWithDeps);
+        FRIEND_TEST(ConfigParserTests, ConfigWithNamedUser);
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
         friend class ProcessLifecycleTests;
