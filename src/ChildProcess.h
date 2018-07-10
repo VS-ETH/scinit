@@ -36,10 +36,11 @@ namespace scinit {
 
         ChildProcess(const ChildProcess &) = delete;
         virtual ChildProcess &operator=(const ChildProcess &) = delete;
-        virtual ~ChildProcess() = default;
+        ~ChildProcess() override = default;
 
         void do_fork(std::map<int, unsigned int> &) noexcept(false) override;
-        void register_with_epoll(int, std::map<int, unsigned int> &) noexcept(false) override;
+        void register_with_epoll(int, std::map<int, unsigned int> &,
+                                 std::map<int, ProcessHandlerInterface::FDType> &) noexcept(false) override;
         std::string get_name() const noexcept override;
         unsigned int get_id() const noexcept override;
         bool can_start_now() const noexcept override;
@@ -49,17 +50,17 @@ namespace scinit {
         void handle_process_event(ProcessHandlerInterface::ProcessEvent event, int data) noexcept override;
         ProcessState get_state() const noexcept override;
 
-      private:
+      protected:
         std::string name, path;
         std::list<std::string> args, capabilities;
         unsigned int uid, gid, graph_id;
         std::shared_ptr<ProcessHandlerInterface> handler;
         std::list<std::string> before, after;
         std::list<std::pair<unsigned int, ChildProcessInterface::ProcessState>> conditions;
-        int stdouterr[2] = {-1, -1}, primaryPid = -1;
+        int stdout[2] = {-1, -1}, stderr[2] = {-1, -1}, primaryPid = -1;
         ProcessType type;
         ProcessState state;
-        void handle_caps();
+        virtual void handle_caps();
 
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
         FRIEND_TEST(ConfigParserTests, SimpleConfDTest);
@@ -67,6 +68,7 @@ namespace scinit {
         FRIEND_TEST(ConfigParserTests, ConfigWithNamedUser);
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
+        FRIEND_TEST(IntegrationTests, TestStdOutErr);
         friend class ProcessLifecycleTests;
     };
 }  // namespace scinit

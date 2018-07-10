@@ -59,6 +59,11 @@ namespace scinit {
          * Called by main. This function should not exit until the program is supposed to exit
          */
         virtual int enter_eventloop() = 0;
+
+        /*
+         * Type of file descriptors that are registered by child processes
+         */
+        enum FDType { STDOUT, STDERR };
     };
 }  // namespace scinit
 

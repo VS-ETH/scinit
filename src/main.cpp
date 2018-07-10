@@ -22,7 +22,6 @@
 #include <mutex>
 #include "ChildProcess.h"
 #include "ChildProcessException.h"
-#include "ChildProcessInterface.h"
 #include "Config.h"
 #include "ProcessHandler.h"
 #include "log.h"
@@ -30,7 +29,7 @@
 #define MAX_EVENTS 10
 #define BUF_SIZE 4096
 
-std::unique_ptr<scinit::Config<scinit::ChildProcessInterface>> handle_commandline_invocation(
+std::unique_ptr<scinit::Config<scinit::ChildProcess>> handle_commandline_invocation(
   int argc, char** argv, const std::shared_ptr<scinit::ProcessHandlerInterface>& handler) noexcept(false) {
     po::options_description desc("Options");
     desc.add_options()("help", "print this message")("config", po::value<std::string>()->default_value("config.yml"),
@@ -67,9 +66,9 @@ std::unique_ptr<scinit::Config<scinit::ChildProcessInterface>> handle_commandlin
                 files.push_back(file.path().native());
             }
         }
-        return std::make_unique<scinit::Config<scinit::ChildProcessInterface>>(files, handler);
+        return std::make_unique<scinit::Config<scinit::ChildProcess>>(files, handler);
     }
-    return std::make_unique<scinit::Config<scinit::ChildProcessInterface>>(config, handler);
+    return std::make_unique<scinit::Config<scinit::ChildProcess>>(config, handler);
 }
 
 int main(int argc, char** argv) {

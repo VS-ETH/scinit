@@ -42,7 +42,7 @@ namespace scinit {
         auto child_1 = std::make_shared<MockChildProcess>();
         EXPECT_CALL(*child_1, can_start_now()).WillRepeatedly(Return(true));
         EXPECT_CALL(*child_1, do_fork(_)).Times(1);
-        EXPECT_CALL(*child_1, register_with_epoll(_, _)).Times(1);
+        EXPECT_CALL(*child_1, register_with_epoll(_, _, _)).Times(1);
         EXPECT_CALL(*child_1, get_name()).Times(2).WillRepeatedly(Return("mockprog"));
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
         all_children.push_back(child_1);
@@ -58,7 +58,7 @@ namespace scinit {
         auto child_1 = std::make_shared<MockChildProcess>();
         EXPECT_CALL(*child_1, can_start_now()).WillRepeatedly(Return(true));
         EXPECT_CALL(*child_1, do_fork(_)).Times(1);
-        EXPECT_CALL(*child_1, register_with_epoll(_, _)).Times(1);
+        EXPECT_CALL(*child_1, register_with_epoll(_, _, _)).Times(1);
         EXPECT_CALL(*child_1, get_name()).Times(3).WillRepeatedly(Return("mockprog"));
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
         all_children.push_back(child_1);

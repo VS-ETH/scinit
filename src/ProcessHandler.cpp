@@ -66,6 +66,28 @@ namespace scinit {
         }
     }
 
+    void ProcessHandler::handle_child_output(int fd, const std::string& str) {
+        auto id = id_for_fd.at(fd);
+        if (auto obj = obj_for_id.at(id).lock()) {
+            std::string name = obj->get_name();
+            if (!fd_type.count(fd)) {
+                LOG->critical(
+                  "BUG: Child (id {0}) outputted something from a file descriptor we don't know the type of!", id);
+            } else {
+                switch (fd_type[fd]) {
+                    case FDType::STDOUT:
+                        spdlog::get(name)->info(str);
+                        break;
+                    case FDType::STDERR:
+                        spdlog::get(name)->warn(str);
+                        break;
+                }
+            }
+        } else {
+            LOG->critical("BUG: Child (id {0}) outputted something but the object has already been freed!", id);
+        }
+    }
+
     void ProcessHandler::event_received(int fd, unsigned int event) {
         if (event & EPOLLIN) {
             if (fd == signal_fd) {
@@ -105,14 +127,7 @@ namespace scinit {
 
                 // If there is something left, output it
                 if (!str.empty()) {
-                    int id = id_for_fd.at(fd);
-                    if (auto obj = obj_for_id.at(id).lock()) {
-                        std::string name = obj->get_name();
-                        spdlog::get(name)->info(str);
-                    } else {
-                        LOG->critical("BUG: Child (id {0}) outputted something but the object has already been freed!",
-                                      id);
-                    }
+                    handle_child_output(fd, str);
                 }
             }
         } else if (event & EPOLLHUP) {
@@ -241,7 +256,7 @@ namespace scinit {
                     // Start program
                     LOG->info("Starting: {0}", program->get_name());
                     program->do_fork(id_for_pid);
-                    program->register_with_epoll(epoll_fd, id_for_fd);
+                    program->register_with_epoll(epoll_fd, id_for_fd, fd_type);
                     number_of_running_procs++;
                 } catch (std::exception& e) { LOG->critical("Couldn't start program: {0}", e.what()); }
             } else {

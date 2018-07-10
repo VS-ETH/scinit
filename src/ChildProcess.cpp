@@ -129,12 +129,17 @@ namespace scinit {
         if (state != READY) {
             throw ChildProcessException("Process not ready, cannot fork now!");
         }
-
-        if (pipe(static_cast<int*>(stdouterr)) == -1) {
-            throw ChildProcessException("Couldn't create pipe!");
+        if (pipe(static_cast<int*>(stdout)) == -1) {
+            throw ChildProcessException("Couldn't create stdout pipe!");
         }
+        if (pipe(static_cast<int*>(stderr)) == -1) {
+            throw ChildProcessException("Couldn't create stderr pipe!");
+        }
+
         // NOLINTNEXTLINE(hicpp-vararg)
-        fcntl(stdouterr[0], FD_CLOEXEC);
+        fcntl(stdout[0], FD_CLOEXEC);
+        // NOLINTNEXTLINE(hicpp-vararg)
+        fcntl(stderr[0], FD_CLOEXEC);
 
         primaryPid = fork();
         if (primaryPid == 0) {
@@ -148,11 +153,12 @@ namespace scinit {
              */
 
             // Redirect stdout and stderr to pipe
-            while (dup2(stdouterr[1], STDOUT_FILENO) == -1 && errno == EINTR) {
+            while (dup2(stdout[1], STDOUT_FILENO) == -1 && errno == EINTR) {
             }
-            while (dup2(stdouterr[1], STDERR_FILENO) == -1 && errno == EINTR) {
+            while (dup2(stderr[1], STDERR_FILENO) == -1 && errno == EINTR) {
             }
-            close(stdouterr[1]);
+            close(stdout[1]);
+            close(stderr[1]);
 
             // Transform args
             const char* program = this->path.c_str();
@@ -178,20 +184,29 @@ namespace scinit {
             LOG->critical("Could not exec child process: {0}", retval);
             exit(-1);
         }
-        close(stdouterr[1]);
+        close(stdout[1]);
+        close(stderr[1]);
         LOG->info("Child pid: {0}", primaryPid);
         state = RUNNING;
         reg[primaryPid] = graph_id;
     }
 
-    void ChildProcess::register_with_epoll(int epoll_fd, std::map<int, unsigned int>& map) noexcept(false) {
+    void ChildProcess::register_with_epoll(int epoll_fd, std::map<int, unsigned int>& map,
+                                           std::map<int, ProcessHandlerInterface::FDType>& fd_type) noexcept(false) {
         struct epoll_event setup {};
-        setup.data.fd = stdouterr[0];
+        setup.data.fd = stdout[0];
         setup.events = EPOLLIN;
-        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, stdouterr[0], &setup) == -1) {
-            throw ChildProcessException("Couldn't bind pipe to epoll socket!");
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, stdout[0], &setup) == -1) {
+            throw ChildProcessException("Couldn't bind stdout pipe to epoll socket!");
         }
-        map[stdouterr[0]] = graph_id;
+        setup.data.fd = stderr[0];
+        if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, stderr[0], &setup) == -1) {
+            throw ChildProcessException("Couldn't bind stderr pipe to epoll socket!");
+        }
+        map[stdout[0]] = graph_id;
+        map[stderr[0]] = graph_id;
+        fd_type[stdout[0]] = ProcessHandlerInterface::FDType::STDOUT;
+        fd_type[stderr[0]] = ProcessHandlerInterface::FDType::STDERR;
     }
 
     std::string ChildProcess::get_name() const noexcept { return name; }

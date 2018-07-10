@@ -23,7 +23,6 @@
 namespace scinit {
     class ChildProcessInterface;
 
-    template <class CTYPE>
     class ConfigInterface {
       public:
         ConfigInterface() = default;
@@ -34,7 +33,7 @@ namespace scinit {
         virtual ConfigInterface& operator=(const ConfigInterface&) = delete;
 
         // Get a list of _all_ processes
-        virtual std::list<std::weak_ptr<CTYPE>> get_processes() const noexcept = 0;
+        virtual std::list<std::weak_ptr<ChildProcessInterface>> get_processes() const noexcept = 0;
     };
 }  // namespace scinit
 

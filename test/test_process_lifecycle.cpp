@@ -57,9 +57,10 @@ namespace scinit {
                   reg[pid] = child->get_id();
               }));
             EXPECT_CALL(*register_event, call_once()).Times(1);
-            EXPECT_CALL(*child, register_with_epoll(_, _))
+            EXPECT_CALL(*child, register_with_epoll(_, _, _))
               .Times(1)
-              .WillOnce(Invoke([register_event](int, std::map<int, unsigned int>& map) {
+              .WillOnce(Invoke([register_event](int, std::map<int, unsigned int>& map,
+                                                std::map<int, ProcessHandlerInterface::FDType>&) {
                   register_event->call_once();
                   map[0] = 0;
               }));

@@ -36,7 +36,8 @@ namespace scinit {
                 MOCK_CONST_METHOD0(get_state, ProcessState());
 
                 MOCK_METHOD1(do_fork, void(std::map<int, unsigned int> &));
-                MOCK_METHOD2(register_with_epoll, void(int, std::map<int, unsigned int> &));
+                MOCK_METHOD3(register_with_epoll, void(int, std::map<int, unsigned int> &,
+                                                       std::map<int, ProcessHandlerInterface::FDType> &));
             };
         }
     }

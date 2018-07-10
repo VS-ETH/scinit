@@ -40,7 +40,7 @@ namespace scinit {
 
     // See base class for documentation
     template <class CTYPE>
-    class Config : public ConfigInterface<CTYPE> {
+    class Config : public ConfigInterface {
       public:
         Config(const std::string& path, std::shared_ptr<ProcessHandlerInterface> handler) noexcept(false)
           : handler(handler) {
@@ -61,9 +61,9 @@ namespace scinit {
 
         ~Config() override = default;
 
-        std::list<std::weak_ptr<CTYPE>> get_processes() const noexcept override {
-            return std::accumulate(processes.begin(), processes.end(), std::list<std::weak_ptr<CTYPE>>(),
-                                   [](auto list, auto ptr) {
+        std::list<std::weak_ptr<ChildProcessInterface>> get_processes() const noexcept override {
+            return std::accumulate(processes.begin(), processes.end(),
+                                   std::list<std::weak_ptr<ChildProcessInterface>>(), [](auto list, auto ptr) {
                                        list.push_back(ptr);
                                        return list;
                                    });
@@ -155,9 +155,9 @@ namespace scinit {
                     }
                 }
 
-                auto process = std::make_shared<ChildProcess>(
-                  (*program)["name"].as<std::string>(), (*program)["path"].as<std::string>(), arg_list, type,
-                  capabilities, uid, gid, child_counter++, handler, before, after);
+                auto process = std::make_shared<CTYPE>((*program)["name"].as<std::string>(),
+                                                       (*program)["path"].as<std::string>(), arg_list, type,
+                                                       capabilities, uid, gid, child_counter++, handler, before, after);
                 processes.push_back(process);
                 handler->register_obj_id(process->get_id(), process);
             }

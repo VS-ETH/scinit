@@ -22,7 +22,7 @@
 
 namespace scinit {
     namespace test {
-        namespace lifecycle {
+        namespace integration {
             class MockChildProcess : public ChildProcess {
               public:
                 MockChildProcess(std::string name, std::string path, std::list<std::string> args,
@@ -34,9 +34,8 @@ namespace scinit {
                                  std::move(capabilities), uid, gid, graph_id, std::move(handler), std::move(before),
                                  std::move(after)){};
 
-                MOCK_METHOD1(do_fork, void(std::map<int, unsigned int>&));
-                MOCK_METHOD3(register_with_epoll, void(int epoll_fd, std::map<int, unsigned int>& map,
-                                                       std::map<int, ProcessHandlerInterface::FDType>&));
+              protected:
+                void handle_caps() override{};
             };
         }
     }

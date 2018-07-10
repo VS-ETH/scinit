@@ -36,15 +36,6 @@ namespace scinit {
         int enter_eventloop() override;
 
       private:
-        std::map<int, std::shared_ptr<boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>>>
-          sig_for_id;
-        std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> obj_for_id;
-        std::map<int, unsigned int> id_for_pid;
-        std::map<int, unsigned int> id_for_fd;
-        std::list<std::weak_ptr<ChildProcessInterface>> all_objs;
-        int epoll_fd = -1, signal_fd = -1, number_of_running_procs = 0;
-        bool should_quit = false;
-
         void setup_signal_handlers();
         void start_programs();
         void event_received(int fd, unsigned int event);
@@ -55,6 +46,19 @@ namespace scinit {
         FRIEND_TEST(ProcessHandlerTests, TestOneChildLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
+        FRIEND_TEST(IntegrationTests, TestStdOutErr);
+
+      protected:
+        virtual void handle_child_output(int, const std::string&);
+        std::map<int, std::shared_ptr<boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>>>
+          sig_for_id;
+        std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> obj_for_id;
+        std::map<int, unsigned int> id_for_pid;
+        std::map<int, unsigned int> id_for_fd;
+        std::map<int, ProcessHandlerInterface::FDType> fd_type;
+        std::list<std::weak_ptr<ChildProcessInterface>> all_objs;
+        int epoll_fd = -1, signal_fd = -1, number_of_running_procs = 0;
+        bool should_quit = false;
     };
 }  // namespace scinit
 
