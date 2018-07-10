@@ -17,23 +17,24 @@
 # Test binaries
 add_executable(zombie test_programs/zombie.cpp)
 add_executable(stdouterr test_programs/stdouterr.cpp)
+add_executable(ptydetect test_programs/ptydetect.cpp)
 
 # Config unit tests
 
 # Config parser
 add_executable(config_tests ${ABS_SCINIT_SOURCE_FILES} test_config_parser.cpp)
-target_link_libraries(config_tests yaml-cpp pthread cap gmock_main ${Boost_LIBRARIES})
+target_link_libraries(config_tests yaml-cpp pthread util cap gmock_main ${Boost_LIBRARIES})
 # Process handler
 add_executable(process_handler_tests ${ABS_SCINIT_SOURCE_FILES} test_process_handler.cpp
         process_handler_test/MockChildProcess.h MockEventHandlers.h)
-target_link_libraries(process_handler_tests yaml-cpp pthread cap gmock_main ${Boost_LIBRARIES})
+target_link_libraries(process_handler_tests yaml-cpp pthread util cap gmock_main ${Boost_LIBRARIES})
 # Process handler and child process state machine
 add_executable(process_lifecycle_tests ${ABS_SCINIT_SOURCE_FILES} test_process_lifecycle.cpp
         process_lifecycle_test/MockChildProcess.h)
-target_link_libraries(process_lifecycle_tests yaml-cpp pthread cap gmock_main ${Boost_LIBRARIES})
+target_link_libraries(process_lifecycle_tests yaml-cpp pthread util cap gmock_main ${Boost_LIBRARIES})
 # Full integration test
 add_executable(integration_tests ${ABS_SCINIT_SOURCE_FILES} test_integration.cpp integration_test/MockChildProcess.h integration_test/MockProcessHandler.h)
-target_link_libraries(integration_tests yaml-cpp pthread cap gmock_main ${Boost_LIBRARIES})
+target_link_libraries(integration_tests yaml-cpp pthread util cap gmock_main ${Boost_LIBRARIES})
 
 # Make unit tests available to 'make test'
 gtest_add_tests(TARGET config_tests SOURCES test_config_parser.cpp)

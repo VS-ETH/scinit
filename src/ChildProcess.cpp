@@ -25,6 +25,9 @@
 #include <iostream>
 #include <memory>
 #include <numeric>
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <pty.h>
 #include "ChildProcessException.h"
 #include "log.h"
 
@@ -32,9 +35,9 @@ namespace scinit {
     ChildProcess::ChildProcess(std::string name, std::string path, std::list<std::string> args, const std::string& type,
                                std::list<std::string> capabilities, unsigned int uid, unsigned int gid,
                                unsigned int graph_id, const std::shared_ptr<ProcessHandlerInterface>& handler,
-                               std::list<std::string> before, std::list<std::string> after)
+                               std::list<std::string> before, std::list<std::string> after, bool want_tty)
       : name(std::move(name)), path(std::move(path)), args(std::move(args)), capabilities(std::move(capabilities)),
-        uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)) {
+        uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)), want_tty(want_tty) {
         if (this->before.empty() && this->after.empty()) {
             this->state = READY;
         } else {
@@ -129,17 +132,46 @@ namespace scinit {
         if (state != READY) {
             throw ChildProcessException("Process not ready, cannot fork now!");
         }
-        if (pipe(static_cast<int*>(stdout)) == -1) {
-            throw ChildProcessException("Couldn't create stdout pipe!");
-        }
-        if (pipe(static_cast<int*>(stderr)) == -1) {
-            throw ChildProcessException("Couldn't create stderr pipe!");
-        }
 
-        // NOLINTNEXTLINE(hicpp-vararg)
-        fcntl(stdout[0], FD_CLOEXEC);
-        // NOLINTNEXTLINE(hicpp-vararg)
-        fcntl(stderr[0], FD_CLOEXEC);
+        if (!want_tty) {
+            if (pipe(static_cast<int*>(stdout)) == -1) {
+                throw ChildProcessException("Couldn't create stdout pipe!");
+            }
+            if (pipe(static_cast<int*>(stderr)) == -1) {
+                throw ChildProcessException("Couldn't create stderr pipe!");
+            }
+            // NOLINTNEXTLINE(hicpp-vararg)
+            fcntl(stdout[0], FD_CLOEXEC);
+            // NOLINTNEXTLINE(hicpp-vararg)
+            fcntl(stderr[0], FD_CLOEXEC);
+        } else {
+            // User want's a PTY. PTYs mimic real terminals. Let's see if this process has a terminal so that we can duplicate it's properties
+            struct winsize term_size {};
+            struct termios term_properties {};
+
+            // NOLINTNEXTLINE(hicpp-vararg)
+            if (tcgetattr(STDIN_FILENO, &term_properties) < 0 || ioctl(STDIN_FILENO, TIOCGWINSZ, &term_size) <0 ) {
+                LOG->warn("PTY requested, but we're not attached to a TTY ourselves. Faking TTY properties...");
+                term_size.ws_xpixel = 0;
+                term_size.ws_ypixel = 0;
+                term_size.ws_row = 24;
+                term_size.ws_col = 80;
+                // TODO(uubk): term_properties
+            }
+            // NOLINTNEXTLINE(hicpp-signed-bitwise)
+            term_properties.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+            // NOLINTNEXTLINE(hicpp-signed-bitwise)
+            term_properties.c_oflag &= ~(OPOST);
+            // NOLINTNEXTLINE(hicpp-signed-bitwise)
+            term_properties.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+
+            if (openpty(&stdout[0], &stdout[1], nullptr, &term_properties, &term_size) < 0) {
+                throw ChildProcessException("Couldn't allocate stdout pty!");
+            }
+            if (openpty(&stderr[0], &stderr[1], nullptr, &term_properties, &term_size) < 0) {
+                throw ChildProcessException("Couldn't allocate stderr pty!");
+            }
+        }
 
         primaryPid = fork();
         if (primaryPid == 0) {
@@ -159,7 +191,6 @@ namespace scinit {
             }
             close(stdout[1]);
             close(stderr[1]);
-
             // Transform args
             const char* program = this->path.c_str();
             // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
@@ -193,7 +224,7 @@ namespace scinit {
 
     void ChildProcess::register_with_epoll(int epoll_fd, std::map<int, unsigned int>& map,
                                            std::map<int, ProcessHandlerInterface::FDType>& fd_type) noexcept(false) {
-        struct epoll_event setup {};
+        struct epoll_event setup{};
         setup.data.fd = stdout[0];
         setup.events = EPOLLIN;
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, stdout[0], &setup) == -1) {

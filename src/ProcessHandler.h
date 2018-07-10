@@ -47,6 +47,7 @@ namespace scinit {
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
         FRIEND_TEST(IntegrationTests, TestStdOutErr);
+        FRIEND_TEST(IntegrationTests, TestPty);
 
       protected:
         virtual void handle_child_output(int, const std::string&);

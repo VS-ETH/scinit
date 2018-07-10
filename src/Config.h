@@ -155,9 +155,14 @@ namespace scinit {
                     }
                 }
 
+                bool want_tty = false;
+                if ((*program)["pty"]) {
+                    want_tty = (*program)["pty"].as<bool>();
+                }
+
                 auto process = std::make_shared<CTYPE>((*program)["name"].as<std::string>(),
                                                        (*program)["path"].as<std::string>(), arg_list, type,
-                                                       capabilities, uid, gid, child_counter++, handler, before, after);
+                                                       capabilities, uid, gid, child_counter++, handler, before, after, want_tty);
                 processes.push_back(process);
                 handler->register_obj_id(process->get_id(), process);
             }

@@ -1,0 +1,4 @@
+programs:
+  - name: iotest
+    path: test/ptydetect
+    pty: true

@@ -72,4 +72,30 @@ namespace scinit {
         ASSERT_EQ(handler->getStdout(), "Something to stdout");
         ASSERT_EQ(handler->getStderr(), "Something to stderr");
     }
+
+    TEST_F(IntegrationTests, TestPty) {
+        auto test_program = fs::path(test_resource);
+        test_resource /= "test-pty.yml";
+        test_program = test_program.parent_path();
+        test_program = test_program.parent_path();
+        test_program /= "build";
+        test_program /= "test";
+        test_program /= "ptydetect";
+        ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
+        ASSERT_TRUE(fs::is_regular_file(test_program)) << "Test resource missing";
+        auto handler = std::make_shared<MockProcessHandler>();
+        auto config = std::make_unique<scinit::Config<MockChildProcess>>(test_resource.native(), handler);
+        auto child_list = config->get_processes();
+        ASSERT_EQ(child_list.size(), 1);
+        auto child_ptr = dynamic_cast<MockChildProcess*>(child_list.begin()->lock().get());
+        child_ptr->path = test_program.native();
+
+        handler->register_processes(child_list);
+        handler->should_quit = true;
+        ASSERT_EQ(child_ptr->get_state(), ChildProcessInterface::ProcessState::READY);
+        handler->enter_eventloop();
+        ASSERT_EQ(child_ptr->get_state(), ChildProcessInterface::ProcessState::DONE);
+        ASSERT_EQ(handler->getStdout(), "stdout is a tty");
+        ASSERT_EQ(handler->getStderr(), "stderr is a tty");
+    }
 }  // namespace scinit

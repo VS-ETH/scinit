@@ -32,7 +32,7 @@ namespace scinit {
       public:
         ChildProcess(std::string, std::string, std::list<std::string>, const std::string &, std::list<std::string>,
                      unsigned int, unsigned int, unsigned int, const std::shared_ptr<ProcessHandlerInterface> &,
-                     std::list<std::string>, std::list<std::string>);
+                     std::list<std::string>, std::list<std::string>, bool);
 
         ChildProcess(const ChildProcess &) = delete;
         virtual ChildProcess &operator=(const ChildProcess &) = delete;
@@ -57,7 +57,8 @@ namespace scinit {
         std::shared_ptr<ProcessHandlerInterface> handler;
         std::list<std::string> before, after;
         std::list<std::pair<unsigned int, ChildProcessInterface::ProcessState>> conditions;
-        int stdout[2] = {-1, -1}, stderr[2] = {-1, -1}, primaryPid = -1;
+        int stdout[2] = {-1, -1}, stderr[2] = {-1, -1}, primaryPid = -1, ptyFd = -1;
+        bool want_tty;
         ProcessType type;
         ProcessState state;
         virtual void handle_caps();
@@ -69,6 +70,7 @@ namespace scinit {
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
         FRIEND_TEST(IntegrationTests, TestStdOutErr);
+        FRIEND_TEST(IntegrationTests, TestPty);
         friend class ProcessLifecycleTests;
     };
 }  // namespace scinit
