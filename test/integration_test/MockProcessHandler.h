@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CINIT_MOCKPROCESSHANDLER_LIFECYCLE_H
-#define CINIT_MOCKPROCESSHANDLER_LIFECYCLE_H
+#ifndef CINIT_MOCKPROCESSHANDLER_INTEGRATION_H
+#define CINIT_MOCKPROCESSHANDLER_INTEGRATION_H
 
 #include "gmock/gmock.h"
 #include "../../src/ProcessHandler.h"
@@ -54,4 +54,4 @@ namespace scinit {
     }
 }  // namespace scinit
 
-#endif  // CINIT_MOCKPROCESSHANDLER_LIFECYCLE_H
+#endif  // CINIT_MOCKPROCESSHANDLER_INTEGRATION_H
