@@ -50,12 +50,11 @@ jobs:
             mkdir -p unittests/tests && \
             cd build && \
             export GTEST_OUTPUT="xml:/tmp/build/unittests/test/" && \
-            for i in $(echo test/*_tests) ; do sudo $i ; done && \
-            chmod -R a+r /tmp/build/unittests/test && \
+            for i in $(echo test/*_tests) ; do $i ; done && \
             cd /tmp/build/unittests/test && \
             for i in * ; do export DIR=$(echo $i|sed 's/_tests.xml//g') && mkdir ../$DIR ; cp $i ../$DIR ; done && \
             cd .. && \
-            sudo rm -Rf test
+            rm -Rf test
       - store_test_results:
           path: /tmp/build/unittests
   smoke-test:
