@@ -32,10 +32,10 @@ namespace scinit {
                                  std::list<std::string> after, bool want_tty)
                   : ChildProcess(std::move(name), std::move(path), std::move(args), std::move(type),
                                  std::move(capabilities), uid, gid, graph_id, std::move(handler), std::move(before),
-                                 std::move(after), want_tty) {};
+                                 std::move(after), want_tty){};
 
               protected:
-                void handle_caps() override{};
+                bool handle_caps() override { return true; };
             };
         }
     }

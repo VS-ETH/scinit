@@ -21,6 +21,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <vector>
 #include "ChildProcessInterface.h"
 #include "ProcessHandlerInterface.h"
 
@@ -57,11 +58,13 @@ namespace scinit {
         std::shared_ptr<ProcessHandlerInterface> handler;
         std::list<std::string> before, after;
         std::list<std::pair<unsigned int, ChildProcessInterface::ProcessState>> conditions;
-        int stdout[2] = {-1, -1}, stderr[2] = {-1, -1}, primaryPid = -1, ptyFd = -1;
+        int stdout[2] = {-1, -1}, stderr[2] = {-1, -1}, primaryPid = -1;
+        std::vector<char> stdoutPTYName;
+        std::vector<char> stderrPTYName;
         bool want_tty;
         ProcessType type;
         ProcessState state;
-        virtual void handle_caps();
+        virtual bool handle_caps();
 
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
         FRIEND_TEST(ConfigParserTests, SimpleConfDTest);
@@ -71,6 +74,7 @@ namespace scinit {
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
         FRIEND_TEST(IntegrationTests, TestStdOutErr);
         FRIEND_TEST(IntegrationTests, TestPty);
+        FRIEND_TEST(IntegrationTests, TestPrivDrop);
         friend class ProcessLifecycleTests;
     };
 }  // namespace scinit

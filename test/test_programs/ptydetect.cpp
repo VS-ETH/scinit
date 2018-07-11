@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <iostream>
 #include <unistd.h>
+#include <iostream>
 
 // Detect whether stdout and stderr are ttys
 int main(int, char**) {

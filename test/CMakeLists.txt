@@ -18,6 +18,7 @@
 add_executable(zombie test_programs/zombie.cpp)
 add_executable(stdouterr test_programs/stdouterr.cpp)
 add_executable(ptydetect test_programs/ptydetect.cpp)
+add_executable(permdetect test_programs/permdetect.cpp)
 
 # Config unit tests
 

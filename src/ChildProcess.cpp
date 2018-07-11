@@ -16,18 +16,18 @@
 
 #include "ChildProcess.h"
 #include <fcntl.h>
+#include <pty.h>
 #include <sys/capability.h>
 #include <sys/epoll.h>
+#include <sys/ioctl.h>
 #include <sys/prctl.h>
+#include <termios.h>
 #include <unistd.h>
 #include <cerrno>
 #include <cstring>
 #include <iostream>
 #include <memory>
 #include <numeric>
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <pty.h>
 #include "ChildProcessException.h"
 #include "log.h"
 
@@ -37,7 +37,8 @@ namespace scinit {
                                unsigned int graph_id, const std::shared_ptr<ProcessHandlerInterface>& handler,
                                std::list<std::string> before, std::list<std::string> after, bool want_tty)
       : name(std::move(name)), path(std::move(path)), args(std::move(args)), capabilities(std::move(capabilities)),
-        uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)), want_tty(want_tty) {
+        uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)),
+        want_tty(want_tty) {
         if (this->before.empty() && this->after.empty()) {
             this->state = READY;
         } else {
@@ -56,7 +57,27 @@ namespace scinit {
 
     unsigned int ChildProcess::get_id() const noexcept { return graph_id; }
 
-    void ChildProcess::handle_caps() {
+    bool ChildProcess::handle_caps() {
+        // Change owner of tty if necessary. Do this before touching capabilities!
+        if (want_tty) {
+            if (chown(stdoutPTYName.data(), this->uid, this->gid) != 0) {
+                std::cerr << "Couldn't set owner of stdout PTY!" << std::endl;
+                return false;
+            }
+            if (chown(stderrPTYName.data(), this->uid, this->gid) != 0) {
+                std::cerr << "Couldn't set owner of stderr PTY!" << std::endl;
+                return false;
+            }
+            if (chmod(stdoutPTYName.data(), 0620) != 0) {
+                std::cerr << "Couldn't set mode of stdout PTY!" << std::endl;
+                return false;
+            }
+            if (chmod(stderrPTYName.data(), 0620) != 0) {
+                std::cerr << "Couldn't set mode of stderr PTY!" << std::endl;
+                return false;
+            }
+        }
+
         // Step 1: Make sure that the this process has all caps that we need
         std::string cap_string = "CAP_SETUID=eip CAP_SETGID=eip CAP_SETPCAP=eip";
         cap_t new_caps_transitional;
@@ -68,7 +89,8 @@ namespace scinit {
 
         int rc = cap_set_proc(new_caps_transitional);
         if (rc != 0) {
-            std::cerr << "Couldn't set capabilities, some features might not work as intended!" << std::endl;
+            std::cerr << "Couldn't set capabilities!" << std::endl;
+            return false;
         }
 
         // Keep caps across setuid because otherwise we can't set ambient caps below
@@ -77,16 +99,19 @@ namespace scinit {
         // Set user and group
         if (setgid(this->gid) == -1) {
             std::cerr << "Couldn't set group!" << std::endl;
+            return false;
         }
         if (setuid(this->uid) == -1) {
             std::cerr << "Couldn't set user!" << std::endl;
+            return false;
         }
         // NOLINTNEXTLINE(hicpp-vararg)
         prctl(PR_SET_KEEPCAPS, 0);
 
         rc = cap_set_proc(new_caps_transitional);
         if (rc != 0) {
-            std::cerr << "Couldn't set capabilities, some features might not work as intended!" << std::endl;
+            std::cerr << "Couldn't set capabilities!" << std::endl;
+            return false;
         }
         cap_free(new_caps_transitional);
 
@@ -107,6 +132,7 @@ namespace scinit {
                 std::cout << "Ambient capability '" << capability << "' enabled." << std::endl;
             } else {
                 std::cout << "Ambient capability '" << capability << "' could not be enabled!" << std::endl;
+                return false;
             }
         }
 
@@ -123,9 +149,11 @@ namespace scinit {
         auto new_caps = cap_from_text(c_cap_string);
         rc = cap_set_proc(new_caps);
         if (rc != 0) {
-            std::cerr << "Couldn't set capabilities, some features might not work as intended!" << std::endl;
+            std::cerr << "Couldn't set capabilities!" << std::endl;
+            return false;
         }
         cap_free(new_caps);
+        return true;
     }
 
     void ChildProcess::do_fork(std::map<int, unsigned int>& reg) noexcept(false) {
@@ -145,12 +173,13 @@ namespace scinit {
             // NOLINTNEXTLINE(hicpp-vararg)
             fcntl(stderr[0], FD_CLOEXEC);
         } else {
-            // User want's a PTY. PTYs mimic real terminals. Let's see if this process has a terminal so that we can duplicate it's properties
+            // User wants a PTY. PTYs mimic real terminals. Let's see if this process has a terminal so that we can
+            // duplicate it's properties
             struct winsize term_size {};
             struct termios term_properties {};
 
             // NOLINTNEXTLINE(hicpp-vararg)
-            if (tcgetattr(STDIN_FILENO, &term_properties) < 0 || ioctl(STDIN_FILENO, TIOCGWINSZ, &term_size) <0 ) {
+            if (tcgetattr(STDIN_FILENO, &term_properties) < 0 || ioctl(STDIN_FILENO, TIOCGWINSZ, &term_size) < 0) {
                 LOG->warn("PTY requested, but we're not attached to a TTY ourselves. Faking TTY properties...");
                 term_size.ws_xpixel = 0;
                 term_size.ws_ypixel = 0;
@@ -170,6 +199,21 @@ namespace scinit {
             }
             if (openpty(&stderr[0], &stderr[1], nullptr, &term_properties, &term_size) < 0) {
                 throw ChildProcessException("Couldn't allocate stderr pty!");
+            }
+            int rc;
+            stdoutPTYName.reserve(64);
+            stderrPTYName.reserve(64);
+            while ((rc = ttyname_r(stdout[1], stdoutPTYName.data(), stdoutPTYName.capacity())) == ERANGE) {
+                stdoutPTYName.reserve(stdoutPTYName.capacity() * 2 + 1);
+            }
+            if (rc != 0) {
+                throw ChildProcessException("Couldn't load name of stdout pty!");
+            }
+            while ((rc = ttyname_r(stdout[1], stderrPTYName.data(), stderrPTYName.capacity())) == ERANGE) {
+                stderrPTYName.reserve(stderrPTYName.capacity() * 2 + 1);
+            }
+            if (rc != 0) {
+                throw ChildProcessException("Couldn't load name of stderr pty!");
             }
         }
 
@@ -206,7 +250,10 @@ namespace scinit {
             c_args[i] = nullptr;
 
             // Handle capabilities and drop permissions
-            handle_caps();
+            if (!handle_caps()) {
+                LOG->critical("Couldn't drop privileges as intended, aborting now!");
+                exit(-1);
+            }
 
             // Execute program
             int retval = execvp(program, static_cast<char* const*>(c_args));
@@ -224,7 +271,7 @@ namespace scinit {
 
     void ChildProcess::register_with_epoll(int epoll_fd, std::map<int, unsigned int>& map,
                                            std::map<int, ProcessHandlerInterface::FDType>& fd_type) noexcept(false) {
-        struct epoll_event setup{};
+        struct epoll_event setup {};
         setup.data.fd = stdout[0];
         setup.events = EPOLLIN;
         if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, stdout[0], &setup) == -1) {
