@@ -217,6 +217,23 @@ namespace scinit {
             }
         }
 
+        // Handle environment
+        std::list<std::string> environment;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+        for (int i = 0; environ[i] != nullptr; i++) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            std::string var(environ[i]);
+            auto pos = var.find('=');
+            if (pos <= 0) {
+                throw ChildProcessException("ERROR: Couldn't find '=' in environment variable string!");
+            }
+            auto key = var.substr(0, pos);
+            if (allowed_env_vars.count(key) == 1) {
+                environment.push_back(std::move(var));
+            }
+        }
+        // TODO(uubk): Regexes and manual settings
+
         primaryPid = fork();
         if (primaryPid == 0) {
             /* This is the child that's supposed to exec
@@ -249,6 +266,16 @@ namespace scinit {
             }
             c_args[i] = nullptr;
 
+            // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+            auto c_env = new char*[environment.size() + 1];
+            i = 0;
+            for (auto& var : environment) {
+                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-bounds-pointer-arithmetic)
+                c_env[i] = const_cast<char*>(var.c_str());
+                i++;
+            }
+            c_env[i] = nullptr;
+
             // Handle capabilities and drop permissions
             if (!handle_caps()) {
                 LOG->critical("Couldn't drop privileges as intended, aborting now!");
@@ -256,7 +283,7 @@ namespace scinit {
             }
 
             // Execute program
-            int retval = execvp(program, static_cast<char* const*>(c_args));
+            int retval = execvpe(program, static_cast<char* const*>(c_args), static_cast<char* const*>(c_env));
 
             // If we get to this point something went wrong...
             LOG->critical("Could not exec child process: {0}", retval);

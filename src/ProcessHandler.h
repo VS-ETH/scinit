@@ -49,6 +49,7 @@ namespace scinit {
         FRIEND_TEST(IntegrationTests, TestStdOutErr);
         FRIEND_TEST(IntegrationTests, TestPty);
         FRIEND_TEST(IntegrationTests, TestPrivDrop);
+        FRIEND_TEST(IntegrationTests, TestEnvFilter);
 
       protected:
         virtual void handle_child_output(int, const std::string&);

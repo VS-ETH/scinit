@@ -21,6 +21,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <unordered_set>
 #include <vector>
 #include "ChildProcessInterface.h"
 #include "ProcessHandlerInterface.h"
@@ -64,6 +65,9 @@ namespace scinit {
         bool want_tty;
         ProcessType type;
         ProcessState state;
+
+        std::unordered_set<std::string> allowed_env_vars = {"HOME", "LANG",  "LANGUAGE", "LOGNAME", "PATH",
+                                                            "PWD",  "SHELL", "TERM",     "USER"};
         virtual bool handle_caps();
 
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
@@ -75,6 +79,7 @@ namespace scinit {
         FRIEND_TEST(IntegrationTests, TestStdOutErr);
         FRIEND_TEST(IntegrationTests, TestPty);
         FRIEND_TEST(IntegrationTests, TestPrivDrop);
+        FRIEND_TEST(IntegrationTests, TestEnvFilter);
         friend class ProcessLifecycleTests;
     };
 }  // namespace scinit
