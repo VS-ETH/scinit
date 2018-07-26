@@ -37,10 +37,11 @@ namespace scinit {
                                std::list<std::string> capabilities, unsigned int uid, unsigned int gid,
                                unsigned int graph_id, const std::shared_ptr<ProcessHandlerInterface>& handler,
                                std::list<std::string> before, std::list<std::string> after, bool want_tty,
-                               bool want_default_env)
+                               bool want_default_env, std::list<std::string> env_extra_whitelist,
+                               std::list<std::pair<std::string, std::string>> env_extra_vars)
       : name(std::move(name)), path(std::move(path)), args(std::move(args)), capabilities(std::move(capabilities)),
         uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)),
-        want_tty(want_tty), want_default_env(want_default_env) {
+        want_tty(want_tty), want_default_env(want_default_env), env_extra_vars(std::move(env_extra_vars)) {
         if (this->before.empty() && this->after.empty()) {
             this->state = READY;
         } else {
@@ -60,6 +61,10 @@ namespace scinit {
             username = "UNKNOWN";
         } else {
             username = std::string(user_ref->pw_name);
+        }
+
+        for (const auto& element : env_extra_whitelist) {
+            allowed_env_vars.insert(element);
         }
     }
 

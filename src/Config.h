@@ -164,10 +164,25 @@ namespace scinit {
                 if ((*program)["default_env"]) {
                     want_default_env = (*program)["default_env"].as<bool>();
                 }
+                std::list<std::string> env_extra_whitelist;
+                std::list<std::pair<std::string, std::string>> env_extra_vars;
+                if ((*program)["env"]) {
+                    for (auto node : (*program)["env"]) {
+                        if (node.IsScalar()) {
+                            env_extra_whitelist.push_back(node.as<std::string>());
+                        } else {
+                            std::string key, value;
+                            key = node.begin()->first.as<std::string>();
+                            value = node.begin()->second.as<std::string>();
+                            env_extra_vars.push_back(std::make_pair(key, value));
+                        }
+                    }
+                }
 
-                auto process = std::make_shared<CTYPE>(
-                  (*program)["name"].as<std::string>(), (*program)["path"].as<std::string>(), arg_list, type,
-                  capabilities, uid, gid, child_counter++, handler, before, after, want_tty, want_default_env);
+                auto process =
+                  std::make_shared<CTYPE>((*program)["name"].as<std::string>(), (*program)["path"].as<std::string>(),
+                                          arg_list, type, capabilities, uid, gid, child_counter++, handler, before,
+                                          after, want_tty, want_default_env, env_extra_whitelist, env_extra_vars);
                 processes.push_back(process);
                 handler->register_obj_id(process->get_id(), process);
             }

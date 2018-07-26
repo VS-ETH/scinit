@@ -29,10 +29,13 @@ namespace scinit {
                                  const std::string& type, std::list<std::string> capabilities, unsigned int uid,
                                  unsigned int gid, unsigned int graph_id,
                                  const std::shared_ptr<ProcessHandlerInterface>& handler, std::list<std::string> before,
-                                 std::list<std::string> after, bool want_tty, bool want_default_env)
+                                 std::list<std::string> after, bool want_tty, bool want_default_env,
+                                 std::list<std::string> env_extra_whitelist,
+                                 std::list<std::pair<std::string, std::string>> env_extra_vars)
                   : ChildProcess(std::move(name), std::move(path), std::move(args), std::move(type),
                                  std::move(capabilities), uid, gid, graph_id, std::move(handler), std::move(before),
-                                 std::move(after), want_tty, want_default_env){};
+                                 std::move(after), want_tty, want_default_env, std::move(env_extra_whitelist),
+                                 std::move(env_extra_vars)){};
 
               protected:
                 bool handle_caps() override { return true; };

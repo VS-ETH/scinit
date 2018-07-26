@@ -200,4 +200,36 @@ namespace scinit {
             ASSERT_THAT(e.what(), ::testing::StartsWith("yaml-cpp: error at line 5, column 14: illegal EOF in scalar"));
         } catch (...) { FAIL() << "Wrong exception type"; }
     }
+
+    TEST_F(ConfigParserTests, ComplexEnvConfig) {
+        test_resource /= "test-env-complex.yml";
+        ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
+        auto handler = std::make_shared<scinit::ProcessHandler>();
+        scinit::Config<ChildProcess> uut(test_resource.native(), handler);
+        auto procs = uut.get_processes();
+        ASSERT_EQ(procs.size(), 1);
+        for (auto &weak_proc : procs) {
+            if (const auto &proc_base = weak_proc.lock().get()) {
+                if (auto proc = dynamic_cast<ChildProcess *>(proc_base)) {
+                    if (proc->get_name() == "envtest") {
+                        ASSERT_EQ(proc->path, "test/envtest");
+                        // Nobody and nogroup should be the same on every system
+                        ASSERT_EQ(proc->uid, 65534);
+                        ASSERT_EQ(proc->gid, 65534);
+                        ASSERT_EQ(proc->allowed_env_vars.size(), 10);
+                        ASSERT_THAT(proc->allowed_env_vars,
+                                    ::testing::UnorderedElementsAre("HOME", "LANG", "LANGUAGE", "LOGNAME", "PATH",
+                                                                    "PWD", "SHELL", "TERM", "USER", "EDITOR"));
+                        ASSERT_THAT(
+                          proc->env_extra_vars,
+                          ::testing::ElementsAre(std::make_pair("FOO", "bar"), std::make_pair("BAR", "${SHELL}-test")));
+                    } else {
+                        FAIL() << "Found unexpected program element";
+                    }
+                }
+            } else {
+                FAIL() << "Couldn't lock weak_ref!";
+            }
+        }
+    }
 }  // namespace scinit

@@ -1,0 +1,8 @@
+programs:
+- name: envtest
+  path: test/envtest
+  default_env: true
+  env:
+    - FOO: bar
+    - EDITOR
+    - BAR: ${SHELL}-test

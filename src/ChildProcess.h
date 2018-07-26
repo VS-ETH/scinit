@@ -19,6 +19,7 @@
 
 #include "gtest/gtest_prod.h"
 #include <list>
+#include <list>
 #include <map>
 #include <string>
 #include <unordered_set>
@@ -34,7 +35,8 @@ namespace scinit {
       public:
         ChildProcess(std::string, std::string, std::list<std::string>, const std::string &, std::list<std::string>,
                      unsigned int, unsigned int, unsigned int, const std::shared_ptr<ProcessHandlerInterface> &,
-                     std::list<std::string>, std::list<std::string>, bool, bool);
+                     std::list<std::string>, std::list<std::string>, bool, bool, std::list<std::string>,
+                     std::list<std::pair<std::string, std::string>>);
 
         ChildProcess(const ChildProcess &) = delete;
         virtual ChildProcess &operator=(const ChildProcess &) = delete;
@@ -68,12 +70,14 @@ namespace scinit {
 
         std::unordered_set<std::string> allowed_env_vars = {"HOME", "LANG",  "LANGUAGE", "LOGNAME", "PATH",
                                                             "PWD",  "SHELL", "TERM",     "USER"};
+        std::list<std::pair<std::string, std::string>> env_extra_vars;
         virtual bool handle_caps();
 
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
         FRIEND_TEST(ConfigParserTests, SimpleConfDTest);
         FRIEND_TEST(ConfigParserTests, ConfigWithDeps);
         FRIEND_TEST(ConfigParserTests, ConfigWithNamedUser);
+        FRIEND_TEST(ConfigParserTests, ComplexEnvConfig);
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
         FRIEND_TEST(IntegrationTests, TestStdOutErr);
