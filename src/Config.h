@@ -160,9 +160,14 @@ namespace scinit {
                     want_tty = (*program)["pty"].as<bool>();
                 }
 
+                bool want_default_env = true;
+                if ((*program)["default_env"]) {
+                    want_default_env = (*program)["default_env"].as<bool>();
+                }
+
                 auto process = std::make_shared<CTYPE>(
                   (*program)["name"].as<std::string>(), (*program)["path"].as<std::string>(), arg_list, type,
-                  capabilities, uid, gid, child_counter++, handler, before, after, want_tty);
+                  capabilities, uid, gid, child_counter++, handler, before, after, want_tty, want_default_env);
                 processes.push_back(process);
                 handler->register_obj_id(process->get_id(), process);
             }

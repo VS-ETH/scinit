@@ -17,6 +17,7 @@
 #include "ChildProcess.h"
 #include <fcntl.h>
 #include <pty.h>
+#include <pwd.h>
 #include <sys/capability.h>
 #include <sys/epoll.h>
 #include <sys/ioctl.h>
@@ -35,10 +36,11 @@ namespace scinit {
     ChildProcess::ChildProcess(std::string name, std::string path, std::list<std::string> args, const std::string& type,
                                std::list<std::string> capabilities, unsigned int uid, unsigned int gid,
                                unsigned int graph_id, const std::shared_ptr<ProcessHandlerInterface>& handler,
-                               std::list<std::string> before, std::list<std::string> after, bool want_tty)
+                               std::list<std::string> before, std::list<std::string> after, bool want_tty,
+                               bool want_default_env)
       : name(std::move(name)), path(std::move(path)), args(std::move(args)), capabilities(std::move(capabilities)),
         uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)),
-        want_tty(want_tty) {
+        want_tty(want_tty), want_default_env(want_default_env) {
         if (this->before.empty() && this->after.empty()) {
             this->state = READY;
         } else {
@@ -53,6 +55,12 @@ namespace scinit {
 
         auto ref = std::bind(&ChildProcess::handle_process_event, this, std::placeholders::_1, std::placeholders::_2);
         handler->register_for_process_state(graph_id, ref);
+        auto user_ref = getpwuid(uid);  // Must not be free'd
+        if (user_ref == nullptr) {
+            username = "UNKNOWN";
+        } else {
+            username = std::string(user_ref->pw_name);
+        }
     }
 
     unsigned int ChildProcess::get_id() const noexcept { return graph_id; }
@@ -218,7 +226,9 @@ namespace scinit {
         }
 
         // Handle environment
-        std::list<std::string> environment;
+        auto environment = std::make_unique<std::list<std::string>>();
+        auto environment_filtered = std::make_unique<std::list<std::string>>();
+        std::unique_ptr<std::list<std::string>> other_list;
         // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         for (int i = 0; environ[i] != nullptr; i++) {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
@@ -229,8 +239,32 @@ namespace scinit {
             }
             auto key = var.substr(0, pos);
             if (allowed_env_vars.count(key) == 1) {
-                environment.push_back(std::move(var));
+                environment->push_back(std::move(var));
             }
+        }
+        // Force USER to correct value
+        std::copy_if(environment->begin(), environment->end(), std::back_inserter(*environment_filtered),
+                     [](std::string& elm) { return elm.find("USER=") != 0; });
+        environment = std::move(environment_filtered);
+        environment_filtered = std::make_unique<std::list<std::string>>();
+        environment->push_back(std::move(std::string("USER=").append(username)));
+        if (want_default_env) {
+            std::copy_if(environment->begin(), environment->end(), std::back_inserter(*environment_filtered),
+                         [](std::string& elm) {
+                             return (elm.find("LANG=") != 0) && (elm.find("LANGUAGE=") != 0) &&
+                                    (elm.find("LOGNAME=") != 0) && (elm.find("PATH=") != 0) &&
+                                    (elm.find("SHELL=") != 0) && (elm.find("TERM=") != 0) && (elm.find("HOME=") != 0) &&
+                                    (elm.find("PWD=") != 0);
+                         });
+            environment = std::move(environment_filtered);
+            environment->emplace_back("LANG=C");
+            environment->emplace_back("LANGUAGE=en");
+            environment->emplace_back(std::move(std::string("LOGNAME=").append(username)));
+            environment->emplace_back("PATH=/usr/local/bin:/usr/bin:/bin");
+            environment->emplace_back("SHELL=/bin/bash");
+            environment->emplace_back("TERM=screen");
+            environment->emplace_back("HOME=/app");
+            environment->emplace_back("PWD=/app");
         }
         // TODO(uubk): Regexes and manual settings
 
@@ -267,9 +301,9 @@ namespace scinit {
             c_args[i] = nullptr;
 
             // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-            auto c_env = new char*[environment.size() + 1];
+            auto c_env = new char*[environment->size() + 1];
             i = 0;
-            for (auto& var : environment) {
+            for (auto& var : *environment) {
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 c_env[i] = const_cast<char*>(var.c_str());
                 i++;

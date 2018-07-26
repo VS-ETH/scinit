@@ -34,7 +34,7 @@ namespace scinit {
       public:
         ChildProcess(std::string, std::string, std::list<std::string>, const std::string &, std::list<std::string>,
                      unsigned int, unsigned int, unsigned int, const std::shared_ptr<ProcessHandlerInterface> &,
-                     std::list<std::string>, std::list<std::string>, bool);
+                     std::list<std::string>, std::list<std::string>, bool, bool);
 
         ChildProcess(const ChildProcess &) = delete;
         virtual ChildProcess &operator=(const ChildProcess &) = delete;
@@ -53,7 +53,7 @@ namespace scinit {
         ProcessState get_state() const noexcept override;
 
       protected:
-        std::string name, path;
+        std::string name, path, username;
         std::list<std::string> args, capabilities;
         unsigned int uid, gid, graph_id;
         std::shared_ptr<ProcessHandlerInterface> handler;
@@ -62,7 +62,7 @@ namespace scinit {
         int stdout[2] = {-1, -1}, stderr[2] = {-1, -1}, primaryPid = -1;
         std::vector<char> stdoutPTYName;
         std::vector<char> stderrPTYName;
-        bool want_tty;
+        bool want_tty, want_default_env;
         ProcessType type;
         ProcessState state;
 

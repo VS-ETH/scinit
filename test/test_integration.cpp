@@ -155,7 +155,7 @@ namespace scinit {
         handler->should_quit = true;
         ASSERT_EQ(child_ptr->get_state(), ChildProcessInterface::ProcessState::READY);
         handler->enter_eventloop();
-        ASSERT_EQ(child_ptr->get_state(), ChildProcessInterface::ProcessState::DONE);
         ASSERT_EQ(handler->getStderr(), "");
+        ASSERT_EQ(child_ptr->get_state(), ChildProcessInterface::ProcessState::DONE);
     }
 }  // namespace scinit

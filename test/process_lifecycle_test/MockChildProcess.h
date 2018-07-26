@@ -29,10 +29,10 @@ namespace scinit {
                                  const std::string& type, std::list<std::string> capabilities, unsigned int uid,
                                  unsigned int gid, unsigned int graph_id,
                                  const std::shared_ptr<ProcessHandlerInterface>& handler, std::list<std::string> before,
-                                 std::list<std::string> after, bool want_tty)
+                                 std::list<std::string> after, bool want_tty, bool want_default_env)
                   : ChildProcess(std::move(name), std::move(path), std::move(args), std::move(type),
                                  std::move(capabilities), uid, gid, graph_id, std::move(handler), std::move(before),
-                                 std::move(after), want_tty){};
+                                 std::move(after), want_tty, want_default_env){};
 
                 MOCK_METHOD1(do_fork, void(std::map<int, unsigned int>&));
                 MOCK_METHOD3(register_with_epoll, void(int epoll_fd, std::map<int, unsigned int>& map,

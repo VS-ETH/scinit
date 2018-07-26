@@ -84,7 +84,7 @@ namespace scinit {
 
         std::list<std::string> args, capabilities, before, after;
         auto child_1 = std::make_shared<MockChildProcess>("mockproc", "/bin/false", args, "SIMPLE", capabilities, 65534,
-                                                          65534, 0, handler, before, after, false);
+                                                          65534, 0, handler, before, after, false, true);
         handler->obj_for_id[0] = child_1;
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
         all_children.push_back(child_1);
@@ -110,10 +110,10 @@ namespace scinit {
         child_1_after.emplace_back("mockprocB");
         auto child_1 =
           std::make_shared<MockChildProcess>("mockprocA", "/bin/false", args, "SIMPLE", capabilities, 65534, 65534, 0,
-                                             handler, child_1_before, child_1_after, false);
+                                             handler, child_1_before, child_1_after, false, true);
         auto child_2 =
           std::make_shared<MockChildProcess>("mockprocB", "/bin/false", args, "SIMPLE", capabilities, 65534, 65534, 1,
-                                             handler, child_2_before, child_2_after, false);
+                                             handler, child_2_before, child_2_after, false, true);
         handler->obj_for_id[0] = child_1;
         handler->obj_for_id[1] = child_2;
         std::list<std::weak_ptr<ChildProcessInterface>> all_children;
