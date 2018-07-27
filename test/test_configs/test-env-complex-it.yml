@@ -1,0 +1,7 @@
+programs:
+- name: envcompare
+  path: test/envcompare
+  default_env: true
+  env:
+  - FOO: bar
+  - BAR: '{{ USER }}-{{ FOO }}'

@@ -59,6 +59,7 @@ Options:
 
 
 ## Dependencies
-This project depends on gtest+gmock and spdlog, which are pulled in via submodule.
-Additionally, CMake's `GoogleTest` module is included for compatibility with earlier
-CMake versions.
+This project depends on [gtest+gmock](https://github.com/google/googletest), 
+[spdlog](https://github.com/gabime/spdlog) and [inja](https://github.com/pantor/inja),
+which are pulled in via submodules. Additionally, CMake's `GoogleTest` module is 
+included for compatibility with earlier CMake versions.

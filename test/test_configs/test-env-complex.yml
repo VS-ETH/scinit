@@ -5,4 +5,4 @@ programs:
   env:
     - FOO: bar
     - EDITOR
-    - BAR: ${SHELL}-test
+    - BAR: '{{ USER }}-{{ FOO }}'

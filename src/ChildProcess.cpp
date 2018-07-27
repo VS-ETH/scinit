@@ -29,6 +29,7 @@
 #include <iostream>
 #include <memory>
 #include <numeric>
+#include "inja.hpp"
 #include "ChildProcessException.h"
 #include "log.h"
 
@@ -271,7 +272,23 @@ namespace scinit {
             environment->emplace_back("HOME=/app");
             environment->emplace_back("PWD=/app");
         }
-        // TODO(uubk): Regexes and manual settings
+        // Environment now contains all whitelisted variables. For user-defined variables, we need to populate
+        // a JSON object for templating
+        nlohmann::json env_env;
+        for (const auto& var : *environment) {
+            auto pos = var.find('=');
+            if (pos <= 0) {
+                throw ChildProcessException("ERROR: Couldn't find '=' in environment variable string!");
+            }
+            env_env[var.substr(0, pos)] = var.substr(pos+1);
+        }
+        for (const auto& pair : env_extra_vars) {
+            auto val = inja::render(pair.second, env_env);
+            auto str = pair.first + "=" + val;
+            environment->emplace_back(str);
+            env_env[pair.first] = val;
+        }
+
 
         primaryPid = fork();
         if (primaryPid == 0) {

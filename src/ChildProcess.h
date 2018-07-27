@@ -84,6 +84,7 @@ namespace scinit {
         FRIEND_TEST(IntegrationTests, TestPty);
         FRIEND_TEST(IntegrationTests, TestPrivDrop);
         FRIEND_TEST(IntegrationTests, TestEnvFilter);
+        FRIEND_TEST(IntegrationTests, TestComplexEnv);
         friend class ProcessLifecycleTests;
     };
 }  // namespace scinit

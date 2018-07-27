@@ -7,3 +7,6 @@
 [submodule "3rdparty/googletest"]
 	path = 3rdparty/googletest
 	url = https://github.com/google/googletest.git
+[submodule "3rdparty/inja"]
+	path = 3rdparty/inja
+	url = https://github.com/pantor/inja.git

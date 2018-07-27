@@ -63,6 +63,9 @@ else()
     set(CLANG_TIDY_ARGS "${CLANG_TIDY}")
 endif()
 
+# Inja
+include_directories(AFTER 3rdparty/inja/src)
+
 # Main source
 add_subdirectory(src)
 
