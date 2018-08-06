@@ -64,7 +64,7 @@ else()
 endif()
 
 # Inja
-include_directories(AFTER 3rdparty/inja/src)
+include_directories(AFTER SYSTEM 3rdparty/inja/src)
 
 # Main source
 add_subdirectory(src)

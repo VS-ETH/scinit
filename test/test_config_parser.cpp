@@ -220,9 +220,9 @@ namespace scinit {
                         ASSERT_THAT(proc->allowed_env_vars,
                                     ::testing::UnorderedElementsAre("HOME", "LANG", "LANGUAGE", "LOGNAME", "PATH",
                                                                     "PWD", "SHELL", "TERM", "USER", "EDITOR"));
-                        ASSERT_THAT(
-                          proc->env_extra_vars,
-                          ::testing::ElementsAre(std::make_pair("FOO", "bar"), std::make_pair("BAR", "${SHELL}-test")));
+                        ASSERT_THAT(proc->env_extra_vars,
+                                    ::testing::ElementsAre(std::make_pair("FOO", "bar"),
+                                                           std::make_pair("BAR", "{{ USER }}-{{ FOO }}")));
                     } else {
                         FAIL() << "Found unexpected program element";
                     }

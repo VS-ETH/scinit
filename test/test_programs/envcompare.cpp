@@ -15,9 +15,9 @@
  */
 
 #include <iostream>
+#include <map>
 #include <string>
 #include <unordered_set>
-#include <map>
 
 extern char** environ;
 // Detect whether environment filtering works
@@ -45,7 +45,7 @@ int main(int, char**) {
             return -1;
         }
         auto key = var.substr(0, pos);
-        auto val = var.substr(pos+1);
+        auto val = var.substr(pos + 1);
         if (allowed_var_values.count(key) == 1) {
             auto allowed_val = allowed_var_values[key];
             if (val != allowed_val) {

@@ -4,4 +4,4 @@ programs:
   default_env: true
   env:
   - FOO: bar
-  - BAR: '{{ USER }}-{{ FOO }}'
+  - BAR: '{{ vars/USER }}-{{ vars/FOO }}'

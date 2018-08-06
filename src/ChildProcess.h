@@ -72,6 +72,7 @@ namespace scinit {
                                                             "PWD",  "SHELL", "TERM",     "USER"};
         std::list<std::pair<std::string, std::string>> env_extra_vars;
         virtual bool handle_caps();
+        virtual std::list<std::string> handle_env();
 
         FRIEND_TEST(ConfigParserTests, SmokeTestConfig);
         FRIEND_TEST(ConfigParserTests, SimpleConfDTest);

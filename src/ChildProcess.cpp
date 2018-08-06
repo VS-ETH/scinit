@@ -29,8 +29,8 @@
 #include <iostream>
 #include <memory>
 #include <numeric>
-#include "inja.hpp"
 #include "ChildProcessException.h"
+#include "inja.hpp"
 #include "log.h"
 
 namespace scinit {
@@ -170,6 +170,64 @@ namespace scinit {
         return true;
     }
 
+    std::list<std::string> ChildProcess::handle_env() {
+        nlohmann::json envObj;
+        auto injaEnv = inja::Environment();
+        injaEnv.add_callback("keys", 1, [&injaEnv](inja::Parsed::Arguments args, nlohmann::json data) {
+            nlohmann::json obj = injaEnv.get_argument(args, 0, data);
+            nlohmann::json list;
+            for (nlohmann::json::iterator it = obj.begin(); it != obj.end(); ++it) {
+                list.emplace_back(it.key());
+            }
+            return list;
+        });
+        injaEnv.add_callback("lookup", 2, [&injaEnv](inja::Parsed::Arguments args, nlohmann::json data) {
+            nlohmann::json obj = injaEnv.get_argument(args, 0, data);
+            auto key = injaEnv.get_argument<std::string>(args, 1, data);
+            return obj[key];
+        });
+
+        for (int i = 0; environ[i] != nullptr; i++) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+            std::string var(environ[i]);
+            auto pos = var.find('=');
+            if (pos <= 0) {
+                throw ChildProcessException("ERROR: Couldn't find '=' in environment variable string!");
+            }
+            auto key = var.substr(0, pos);
+            if (allowed_env_vars.count(key) == 1) {
+                auto val = var.substr(pos + 1);
+                envObj["vars"][key] = val;
+            }
+        }
+        // Force USER to correct value
+        envObj["vars"]["USER"] = username;
+        if (want_default_env) {
+            envObj["vars"]["LANG"] = "C";
+            envObj["vars"]["LANGUAGE"] = "en";
+            envObj["vars"]["LOGNAME"] = username;
+            envObj["vars"]["PATH"] = "/usr/local/bin:/usr/bin:/bin";
+            envObj["vars"]["SHELL"] = "/bin/bash";
+            envObj["vars"]["TERM"] = "screen";
+            envObj["vars"]["HOME"] = "/app";
+            envObj["vars"]["PWD"] = "/app";
+        }
+        for (const auto& pair : env_extra_vars) {
+            auto val = inja::render(pair.second, envObj);
+            auto str = pair.first + "=" + val;
+            envObj["vars"][pair.first] = val;
+        }
+        auto envstr =
+          injaEnv.render("{% for var in keys(vars) %}{{ var }}={{ lookup(vars, var) }}\n{% endfor %}", envObj);
+        std::stringstream stream(envstr);
+        std::string line;
+        std::list<std::string> environment;
+        while (std::getline(stream, line, '\n')) {
+            environment.push_back(line);
+        }
+        return environment;
+    }
+
     void ChildProcess::do_fork(std::map<int, unsigned int>& reg) noexcept(false) {
         if (state != READY) {
             throw ChildProcessException("Process not ready, cannot fork now!");
@@ -231,64 +289,7 @@ namespace scinit {
             }
         }
 
-        // Handle environment
-        auto environment = std::make_unique<std::list<std::string>>();
-        auto environment_filtered = std::make_unique<std::list<std::string>>();
-        std::unique_ptr<std::list<std::string>> other_list;
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        for (int i = 0; environ[i] != nullptr; i++) {
-            // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            std::string var(environ[i]);
-            auto pos = var.find('=');
-            if (pos <= 0) {
-                throw ChildProcessException("ERROR: Couldn't find '=' in environment variable string!");
-            }
-            auto key = var.substr(0, pos);
-            if (allowed_env_vars.count(key) == 1) {
-                environment->push_back(std::move(var));
-            }
-        }
-        // Force USER to correct value
-        std::copy_if(environment->begin(), environment->end(), std::back_inserter(*environment_filtered),
-                     [](std::string& elm) { return elm.find("USER=") != 0; });
-        environment = std::move(environment_filtered);
-        environment_filtered = std::make_unique<std::list<std::string>>();
-        environment->push_back(std::move(std::string("USER=").append(username)));
-        if (want_default_env) {
-            std::copy_if(environment->begin(), environment->end(), std::back_inserter(*environment_filtered),
-                         [](std::string& elm) {
-                             return (elm.find("LANG=") != 0) && (elm.find("LANGUAGE=") != 0) &&
-                                    (elm.find("LOGNAME=") != 0) && (elm.find("PATH=") != 0) &&
-                                    (elm.find("SHELL=") != 0) && (elm.find("TERM=") != 0) && (elm.find("HOME=") != 0) &&
-                                    (elm.find("PWD=") != 0);
-                         });
-            environment = std::move(environment_filtered);
-            environment->emplace_back("LANG=C");
-            environment->emplace_back("LANGUAGE=en");
-            environment->emplace_back(std::move(std::string("LOGNAME=").append(username)));
-            environment->emplace_back("PATH=/usr/local/bin:/usr/bin:/bin");
-            environment->emplace_back("SHELL=/bin/bash");
-            environment->emplace_back("TERM=screen");
-            environment->emplace_back("HOME=/app");
-            environment->emplace_back("PWD=/app");
-        }
-        // Environment now contains all whitelisted variables. For user-defined variables, we need to populate
-        // a JSON object for templating
-        nlohmann::json env_env;
-        for (const auto& var : *environment) {
-            auto pos = var.find('=');
-            if (pos <= 0) {
-                throw ChildProcessException("ERROR: Couldn't find '=' in environment variable string!");
-            }
-            env_env[var.substr(0, pos)] = var.substr(pos+1);
-        }
-        for (const auto& pair : env_extra_vars) {
-            auto val = inja::render(pair.second, env_env);
-            auto str = pair.first + "=" + val;
-            environment->emplace_back(str);
-            env_env[pair.first] = val;
-        }
-
+        auto environment = handle_env();
 
         primaryPid = fork();
         if (primaryPid == 0) {
@@ -323,9 +324,9 @@ namespace scinit {
             c_args[i] = nullptr;
 
             // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-            auto c_env = new char*[environment->size() + 1];
+            auto c_env = new char*[environment.size() + 1];
             i = 0;
-            for (auto& var : *environment) {
+            for (auto& var : environment) {
                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast,cppcoreguidelines-pro-bounds-pointer-arithmetic)
                 c_env[i] = const_cast<char*>(var.c_str());
                 i++;
