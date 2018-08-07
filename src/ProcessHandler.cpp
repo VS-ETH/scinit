@@ -55,7 +55,8 @@ namespace scinit {
         } else {
             // Forward signal
             for (auto pair : id_for_pid) {
-                kill(pair.second, signal);
+                LOG->debug("Forwarding signal {0} to pid {1}", signal, pair.first);
+                kill(pair.first, signal);
             }
 
             // NOLINTNEXTLINE(hicpp-signed-bitwise)
@@ -131,7 +132,7 @@ namespace scinit {
                 }
             }
         } else if (event & EPOLLHUP) {
-            LOG->info("Child process has closed control terminal (SIGHUP)!");
+            LOG->debug("Child process has closed control terminal (SIGHUP)!");
             struct epoll_event event_buf {};
             event_buf.data.fd = fd;
             if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, &event_buf) == -1) {
@@ -149,7 +150,11 @@ namespace scinit {
             // One of ours!
             int id = id_for_pid[pid];
             if (auto ptr = obj_for_id[id].lock()) {
-                LOG->info("Child {0} (PID {1}) exitted with RC {2}", ptr->get_name(), pid, rc);
+                if (rc == 0) {
+                    LOG->info("Child {0} (PID {1}) exitted with RC {2}", ptr->get_name(), pid, rc);
+                } else {
+                    LOG->warn("Child {0} (PID {1}) exitted with RC {2}", ptr->get_name(), pid, rc);
+                }
             } else {
                 LOG->critical("BUG: Child (PID {0}) exitted with RC {1} and the object has already been freed!", pid,
                               rc);
