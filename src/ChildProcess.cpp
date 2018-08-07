@@ -433,7 +433,7 @@ namespace scinit {
                       auto retval = ptr->get_state() != condition.second;
                       if (!retval) {
                           LOG->debug("Condition {0} not in state {1} fulfilled with state {2}", ptr->get_name(),
-                                  condition.second, ptr->get_state());
+                                     condition.second, ptr->get_state());
                       }
                       return retval;
                   }
