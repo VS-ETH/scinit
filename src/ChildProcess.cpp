@@ -187,6 +187,7 @@ namespace scinit {
             return obj[key];
         });
 
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
         for (int i = 0; environ[i] != nullptr; i++) {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-pointer-arithmetic)
             std::string var(environ[i]);
