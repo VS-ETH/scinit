@@ -1,6 +1,3 @@
-[submodule "spdlog"]
-	path = spdlog
-	url = https://github.com/gabime/spdlog.git
 [submodule "3rdparty/spdlog"]
 	path = 3rdparty/spdlog
 	url = https://github.com/gabime/spdlog.git
@@ -9,4 +6,4 @@
 	url = https://github.com/google/googletest.git
 [submodule "3rdparty/inja"]
 	path = 3rdparty/inja
-	url = git@github.com:uubk/inja.git
+	url = https://github.com/uubk/inja.git
