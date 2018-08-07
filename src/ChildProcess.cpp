@@ -382,13 +382,13 @@ namespace scinit {
               if (contains) {
                   return true;
               }
-              if (pair.first == other_process) {
-                  return true;
-              }
-              return false;
+              return pair.first == other_process;
           });
         if (!contains) {
+            LOG->debug("Proc {0}: Adding new dependency on proc {1}", this->name, other_process);
             conditions.emplace_back(std::make_pair(other_process, other_state));
+        } else {
+            LOG->debug("Proc {0}: Not adding new dependency on proc {1}", this->name, other_process);
         }
     }
 
@@ -430,12 +430,18 @@ namespace scinit {
                       return true;
                   }
                   if (auto ptr = other_procs[condition.first].lock()) {
-                      return ptr->get_state() != condition.second;
+                      auto retval = ptr->get_state() != condition.second;
+                      if (!retval) {
+                          LOG->debug("Condition {0} not in state {1} fulfilled with state {2}", ptr->get_name(),
+                                  condition.second, ptr->get_state());
+                      }
+                      return retval;
                   }
                   LOG->critical("BUG: Found reference to process that doesn't exist anymore");
                   return true;
               });
             if (!still_blocked) {
+                LOG->debug("Proc {0}: Transition to ready", this->name);
                 state = READY;
             }
         }

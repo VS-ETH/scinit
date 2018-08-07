@@ -170,18 +170,27 @@ namespace scinit {
         setup_signal_handlers();
         for (auto& child : all_objs) {
             if (auto ptr = child.lock()) {
+                ptr->propagate_dependencies(all_objs);
                 ptr->notify_of_state(obj_for_id);
             } else {
                 LOG->warn("Free'd child in child list!");
             }
         }
-
         start_programs();
 
         // Everything is set up, now we only need to wait for events
         LOG->debug("Entering main event loop");
         struct epoll_event events[MAX_EVENTS];
         while (true) {
+            for (auto& child : all_objs) {
+                if (auto ptr = child.lock()) {
+                    ptr->notify_of_state(obj_for_id);
+                } else {
+                    LOG->warn("Free'd child in child list!");
+                }
+            }
+            start_programs();
+
             int num_fds = epoll_wait(epoll_fd, static_cast<epoll_event*>(events), MAX_EVENTS, 1000);
             LOG->debug("Epoll got back, num_fds: {0}", num_fds);
 
