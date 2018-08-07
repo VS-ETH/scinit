@@ -46,6 +46,7 @@ The only mandatory options from this example are `name` and `path`. Other option
 * `user`/`group` These work like uid/gid, except with names. If you specify both numeric options and strings, the strings will take precedence
 * `pty` Can be set to `true` to expose a pseudo-TTY to a child process instead of pipes.
 * `before`/`after` Can be set to the name of another program argument to indicate that this program needs to be started before or after it. A program is considered started if it has exitted successfully (type oneshot) or is running (type simple). The implementation is faily basic at the moment, e.g. it doesn't actually check for feasibility.
+* `env` If set, contains a mixed list of strings and maps. A string names an additional environment variable to be whitelisted, a map names an environment variable to be set to a given value. The value for a variable supports Inja templates, e.g. `{{ vars/USER }}`.
 
 ### Invocation
 ```
@@ -60,6 +61,6 @@ Options:
 
 ## Dependencies
 This project depends on [gtest+gmock](https://github.com/google/googletest), 
-[spdlog](https://github.com/gabime/spdlog) and [inja](https://github.com/pantor/inja),
+[spdlog](https://github.com/gabime/spdlog) and [inja](https://github.com/uubk/inja),
 which are pulled in via submodules. Additionally, CMake's `GoogleTest` module is 
 included for compatibility with earlier CMake versions.
