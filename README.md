@@ -65,4 +65,4 @@ Options:
 This project depends on [gtest+gmock](https://github.com/google/googletest), 
 [spdlog](https://github.com/gabime/spdlog) and [inja](https://github.com/uubk/inja),
 which are pulled in via submodules. Additionally, CMake's `GoogleTest` module is 
-included for compatibility with earlier CMake versions.
+included for compatibility with earlier CMake versions. For coverage, we pull in Lars Bilke's [CodeCoverage](https://github.com/bilke/cmake-modules/blob/add62f1ebc5412e9eb3b846f73770f7ea31440e9/CodeCoverage.cmake) module.
