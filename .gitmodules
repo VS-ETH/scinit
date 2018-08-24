@@ -7,3 +7,6 @@
 [submodule "3rdparty/inja"]
 	path = 3rdparty/inja
 	url = https://github.com/pantor/inja.git
+[submodule "3rdparty/cmake-modules"]
+	path = 3rdparty/cmake-modules
+	url = https://github.com/bilke/cmake-modules.git

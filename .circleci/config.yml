@@ -1,11 +1,31 @@
 defaults: &defaults
   working_directory: /tmp/build
   docker:
-    - image: uubk/scinit-build:latest
+    - image: uubk/scinit-build:debian
+
+defaults-ubuntu: &defaults-ubuntu
+  working_directory: /tmp/build
+  docker:
+  - image: uubk/scinit-build:ubuntu
 
 version: 2
 jobs:
-  build:
+  build-check-ubuntu:
+    <<: *defaults-ubuntu
+    steps:
+    - checkout
+    - run:
+        name: checkout submodules
+        command: git submodule update --init
+    - run:
+        name: Fail on clang-tidy warnings
+        command: |
+          sed "s/WarningsAsErrors: ''/WarningsAsErrors: '*'/g" -i .clang-tidy && \
+          cat .clang-tidy | grep WarningsAsErrors
+    - run:
+        name: build
+        command: mkdir build && cd build && cmake .. && make -j4 && make test
+  build-debian:
     <<: *defaults
     steps:
       - checkout
@@ -38,7 +58,7 @@ jobs:
           root: build
           paths:
             - "*"
-  unit-tests:
+  unit-tests-debian:
       <<: *defaults
       steps:
       - checkout
@@ -57,7 +77,22 @@ jobs:
             rm -Rf test
       - store_test_results:
           path: /tmp/build/unittests
-  smoke-test:
+  coverage-debian:
+    <<: *defaults
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/build/build
+    - run:
+        name: Check coverage
+        command: |
+          cd build && \
+          make cover && \
+          cp cover.info coverage.info
+    - run:
+        name: Upload coverage
+        command: bash <(curl -s https://codecov.io/bash)
+  smoke-test-debian:
     machine: true
     working_directory: /tmp/build
     steps:
@@ -79,12 +114,18 @@ jobs:
           command: sudo .circleci/smoke-test.sh
 workflows:
   version: 2
-  build-and-test:
+  debian:
     jobs:
-      - build
-      - unit-tests:
+      - build-debian
+      - unit-tests-debian:
           requires:
-            - build
-      - smoke-test:
+            - build-debian
+      - smoke-test-debian:
           requires:
-            - build
+            - build-debian
+      - coverage-debian:
+          requires:
+            - build-debian
+  ubuntu:
+    jobs:
+      - build-check-ubuntu

@@ -14,12 +14,14 @@
 # limitations under the License.
 #
 
-cmake_minimum_required(VERSION 3.7.2)
+cmake_minimum_required(VERSION 3.5.1)
 project(cinit)
 
 set(CMAKE_CXX_STANDARD 14)
 if (${CMAKE_VERSION} VERSION_LESS "3.9.0")
-    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake)
+    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake-modules)
+else()
+    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake-modules)
 endif()
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
@@ -30,10 +32,21 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+    include(CodeCoverage)
+    APPEND_COVERAGE_COMPILER_FLAGS()
+    set(COVERAGE_LCOV_EXCLUDES '/usr' '*/boost/*' '*c++*' '*/yaml-cpp/*' '*/3rdparty/*')
+    SETUP_TARGET_FOR_COVERAGE_LCOV(
+            NAME cover
+            EXECUTABLE make test
+            DEPENDENCIES issue_reproducers
+    )
+endif()
+
 include(GoogleTest)
 enable_testing()
 
-find_package(Boost 1.62 COMPONENTS program_options filesystem signals REQUIRED)
+find_package(Boost 1.58 COMPONENTS program_options filesystem signals REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 include_directories(3rdparty/spdlog/include)
 
