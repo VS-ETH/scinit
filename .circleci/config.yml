@@ -70,7 +70,7 @@ jobs:
             mkdir -p unittests/tests && \
             cd build && \
             touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
-            chmod a+w touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+            chmod a+w test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
             export GTEST_OUTPUT="xml:/tmp/build/unittests/test/" && \
             for i in $(echo test/*_tests) ; do $i ; done && \
             cd /tmp/build/unittests/test && \
@@ -92,6 +92,8 @@ jobs:
         name: Check coverage
         command: |
           cd build && \
+          touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+          chmod a+w test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
           make cover && \
           cp cover.info coverage.info
     - run:
