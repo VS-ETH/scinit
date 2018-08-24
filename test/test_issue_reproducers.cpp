@@ -47,6 +47,7 @@ namespace scinit {
         void TearDown() override { spdlog::drop_all(); }
     };
 
+    // Issue 8 showed incorrect state transitions leading to dependencies being ignored
     TEST_F(IssueReproducers, ReproduceIssue8) {
         test_resource /= "issue-8-simplified.yml";
         ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
@@ -65,6 +66,25 @@ namespace scinit {
         auto helloIdx = stdout.find("Hello, it's me!");
         ASSERT_FALSE(doneIdx == std::string::npos || helloIdx == std::string::npos || doneIdx >= helloIdx)
           << "Invalid ordering or missing string in stdout!";
+        ASSERT_EQ(handler->getStderr(), "");
+    }
+
+    // Issue 9 showed incorrect handling of crashed processes, leading to impossible termination
+    TEST_F(IssueReproducers, ReproduceIssue9) {
+        test_resource /= "issue-9-crashing-exit.yml";
+        ASSERT_TRUE(fs::is_regular_file(test_resource)) << "Test resource missing";
+        auto handler = std::make_shared<MockProcessHandler>();
+        handler->alsoOutput = true;
+        handler->pollRounds = 30;
+        auto config = std::make_unique<scinit::Config<MockChildProcess>>(test_resource.native(), handler);
+        auto child_list = config->get_processes();
+        ASSERT_EQ(child_list.size(), 4);
+
+        handler->register_processes(child_list);
+        handler->enter_eventloop();
+
+        auto stdout = handler->getStdout();
+        ASSERT_EQ(handler->getStdout(), "Hello!");
         ASSERT_EQ(handler->getStderr(), "");
     }
 }

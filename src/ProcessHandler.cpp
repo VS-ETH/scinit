@@ -155,7 +155,7 @@ namespace scinit {
     void ProcessHandler::sigchld_received(int pid, int rc) {
         if (id_for_pid.count(pid) > 0) {
             // One of ours!
-            int id = id_for_pid[pid];
+            unsigned int id = id_for_pid[pid];
             if (auto ptr = obj_for_id[id].lock()) {
                 if (rc == 0) {
                     LOG->info("Child {0} (PID {1}) exitted with RC {2}", ptr->get_name(), pid, rc);
@@ -167,7 +167,25 @@ namespace scinit {
                               rc);
             }
             number_of_running_procs--;
+            // Notify child process of exit
             (*sig_for_id[id])(EXIT, rc);
+            // Remove PID from our list
+            id_for_pid.erase(pid);
+            // Remove from FD lists
+            std::list<int> fds;
+            for (auto id_fd_par : id_for_fd) {
+                if (id_fd_par.second == id) {
+                    fds.push_back(id_fd_par.first);
+                }
+            }
+            if (fds.size() != 2) {
+                LOG->warn("Expected to remove two FDs but only found {0}", fds.size());
+            }
+            for (auto fd : fds) {
+                // TODO(uubk): Unregister from epoll socket to save resources
+                id_for_fd.erase(fd);
+                fd_type.erase(fd);
+            }
         } else {
             LOG->info("Reaped zombie (PID {0}) with RC {1}", pid, rc);
         }

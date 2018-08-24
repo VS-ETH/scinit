@@ -1,0 +1,27 @@
+programs:
+- type: oneshot
+  before:
+  - other-proc
+  path: /bin/bash
+  name: setup-script
+  args:
+  - -c
+  - sleep 5 ; exit -1
+- path: /bin/bash
+  args:
+  - -c
+  - while [ 1 -eq 1 ] ; do echo "Hello, it's me!" ; sleep 1 ; done
+  name: other-proc
+  type: simple
+- path: /bin/bash
+  args:
+  - -c
+  - sleep 2 ; echo "Hello!" ; sleep 1 ; exit -1
+  name: third-proc
+  type: simple
+- path: /bin/bash
+  args:
+  - -c
+  - while [ 1 -eq 1 ] ; do sleep 1 ; done
+  name: run-proc
+  type: simple
