@@ -118,7 +118,7 @@ namespace scinit {
                                        before = yaml_node_to_str_list(program, "before"),
                                        after = yaml_node_to_str_list(program, "after");
 
-                int uid = 65534, gid = 65534;
+                int uid = -1, gid = -1;
                 bool did_set_numeric = false;
                 if ((*program)["uid"]) {
                     uid = (*program)["uid"].as<int>();
@@ -128,12 +128,18 @@ namespace scinit {
                     uid = (*program)["gid"].as<int>();
                     did_set_numeric = true;
                 }
-                if ((*program)["user"]) {
-                    auto user_string = (*program)["user"].as<std::string>();
+                if ((*program)["user"] || !did_set_numeric) {
+                    std::string user_string;
+                    if ((*program)["user"]) {
+                        user_string = (*program)["user"].as<std::string>();
+                    } else {
+                        user_string = "nobody";
+                    }
                     // ...(Do not pass the returned pointer to free(3).)...
                     auto user_struct = getpwnam(user_string.c_str());
                     if (user_struct == nullptr) {
-                        LOG->warn("Couldn't lookup uid of user '{0}', leaving default user!", user_string);
+                        LOG->critical("Couldn't lookup uid of user '{0}', aborting!", user_string);
+                        exit(-1);
                     } else {
                         uid = user_struct->pw_uid;
                         if (did_set_numeric) {
@@ -141,12 +147,18 @@ namespace scinit {
                         }
                     }
                 }
-                if ((*program)["group"]) {
-                    auto group_string = (*program)["group"].as<std::string>();
+                if ((*program)["group"] || !did_set_numeric) {
+                    std::string group_string;
+                    if ((*program)["group"]) {
+                        group_string = (*program)["group"].as<std::string>();
+                    } else {
+                        group_string = "nogroup";
+                    }
                     // ...(Do not pass the returned pointer to free(3).)...
                     auto group_struct = getgrnam(group_string.c_str());
                     if (group_struct == nullptr) {
-                        LOG->warn("Couldn't lookup gid of group '{0}', leaving default group!", group_string);
+                        LOG->critical("Couldn't lookup gid of group '{0}', aborting!", group_string);
+                        exit(-1);
                     } else {
                         gid = group_struct->gr_gid;
                         if (did_set_numeric) {

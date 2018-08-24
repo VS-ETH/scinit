@@ -69,8 +69,10 @@ jobs:
           command: |
             mkdir -p unittests/tests && \
             cd build && \
+            touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+            chmod a+w touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
             export GTEST_OUTPUT="xml:/tmp/build/unittests/test/" && \
-            for i in $(echo test/*_tests) ; do $i --gtest_filter=-IntegrationTests.TestPrivDrop ; done && \
+            for i in $(echo test/*_tests) ; do $i ; done && \
             cd /tmp/build/unittests/test && \
             for i in * ; do export DIR=$(echo $i|sed 's/_tests.xml//g') && mkdir ../$DIR ; cp $i ../$DIR ; done && \
             cd .. && \

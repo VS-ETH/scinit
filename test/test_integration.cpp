@@ -129,8 +129,8 @@ namespace scinit {
               << "Full stderr:" << handler->getStderr() << ", Full stdout: " << handler->getStdout();
             ASSERT_EQ(handler->getStderr(), "") << "Full stderr:" << handler->getStderr()
                                                 << ", Full stdout: " << handler->getStdout();
-            ASSERT_EQ(handler->getStdout(), "Test via FD\nTest via stream")
-              << "Full stderr:" << handler->getStderr() << ", Full stdout: " << handler->getStdout();
+            ASSERT_EQ(handler->getStdout(), "User/group ok") << "Full stderr:" << handler->getStderr()
+                                                             << ", Full stdout: " << handler->getStdout();
         }
     }
 
