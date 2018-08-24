@@ -24,7 +24,10 @@ jobs:
           cat .clang-tidy | grep WarningsAsErrors
     - run:
         name: build
-        command: mkdir build && cd build && cmake .. && make -j4 && make test
+        command: |
+          mkdir build && cd build && cmake .. && make -j4 &&
+          touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+          chmod -R 777 /tmp/build/build && make test
   build-debian:
     <<: *defaults
     steps:
@@ -70,7 +73,7 @@ jobs:
             mkdir -p unittests/tests && \
             cd build && \
             touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
-            chmod a+w test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+            chmod -R 777 /tmp/build/build && \
             export GTEST_OUTPUT="xml:/tmp/build/unittests/test/" && \
             for i in $(echo test/*_tests) ; do $i ; done && \
             cd /tmp/build/unittests/test && \
@@ -93,7 +96,7 @@ jobs:
         command: |
           cd build && \
           touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
-          chmod a+w test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+          chmod -R 777 /tmp/build/build && \
           make cover && \
           cp cover.info coverage.info
     - run:
