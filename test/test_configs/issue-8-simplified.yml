@@ -1,0 +1,15 @@
+programs:
+- type: oneshot
+  before:
+  - other-proc
+  path: /bin/bash
+  name: setup-script
+  args:
+    - -c
+    - sleep 5 ; echo done
+- path: /bin/bash
+  args:
+  - -c
+  - while [ 1 -eq 1 ] ; do echo "Hello, it's me!" ; sleep 1 ; done
+  name: other-proc
+  type: simple

@@ -37,15 +37,14 @@ namespace scinit {
 
       private:
         void setup_signal_handlers();
-        void start_programs();
         void event_received(int fd, unsigned int event);
-        void signal_received(unsigned int signal);
         void sigchld_received(int pid, int rc);
 
         FRIEND_TEST(ProcessHandlerTests, TestOneRunnableChild);
         FRIEND_TEST(ProcessHandlerTests, TestOneChildLifecycle);
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
-        FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
+        FRIEND_TEST(ProcessLifecycleTests, TwoDependantOneshotProcessesLifecycle);
+        FRIEND_TEST(ProcessLifecycleTests, TwoDependantSimpleProcessesLifecycle);
         FRIEND_TEST(IntegrationTests, TestStdOutErr);
         FRIEND_TEST(IntegrationTests, TestPty);
         FRIEND_TEST(IntegrationTests, TestPrivDrop);
@@ -54,6 +53,8 @@ namespace scinit {
 
       protected:
         virtual void handle_child_output(int, const std::string&);
+        virtual void start_programs();
+        void signal_received(unsigned int signal);
         std::map<int, std::shared_ptr<boost::signals2::signal<void(ProcessHandlerInterface::ProcessEvent, int)>>>
           sig_for_id;
         std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> obj_for_id;

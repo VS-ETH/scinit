@@ -24,6 +24,10 @@ namespace scinit {
     namespace test {
         namespace integration {
             class MockProcessHandler : public ProcessHandler {
+              public:
+                bool alsoOutput = false;
+                int pollRounds = -1;
+
               protected:
                 std::string stdout, stderr;
 
@@ -43,6 +47,19 @@ namespace scinit {
                     } else {
                         FAIL() << "Couldn't load object from list";
                     }
+                    if (alsoOutput) {
+                        ProcessHandler::handle_child_output(fd, str);
+                    }
+                }
+
+                void start_programs() override {
+                    if (pollRounds == 0) {
+                        signal_received(SIGTERM);
+                    }
+                    if (pollRounds >= 0) {
+                        pollRounds--;
+                    }
+                    ProcessHandler::start_programs();
                 }
 
               public:

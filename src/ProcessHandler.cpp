@@ -33,6 +33,13 @@
 namespace scinit {
     void ProcessHandler::register_processes(std::list<std::weak_ptr<ChildProcessInterface>>& refs) {
         this->all_objs = refs;
+        for (auto& child : all_objs) {
+            if (auto ptr = child.lock()) {
+                ptr->propagate_dependencies(all_objs);
+            } else {
+                LOG->warn("Free'd child in child list!");
+            }
+        }
     }
 
     void ProcessHandler::register_for_process_state(
@@ -168,27 +175,12 @@ namespace scinit {
 
     int ProcessHandler::enter_eventloop() {
         setup_signal_handlers();
-        for (auto& child : all_objs) {
-            if (auto ptr = child.lock()) {
-                ptr->propagate_dependencies(all_objs);
-                ptr->notify_of_state(obj_for_id);
-            } else {
-                LOG->warn("Free'd child in child list!");
-            }
-        }
         start_programs();
 
         // Everything is set up, now we only need to wait for events
         LOG->debug("Entering main event loop");
         struct epoll_event events[MAX_EVENTS];
         while (true) {
-            for (auto& child : all_objs) {
-                if (auto ptr = child.lock()) {
-                    ptr->notify_of_state(obj_for_id);
-                } else {
-                    LOG->warn("Free'd child in child list!");
-                }
-            }
             start_programs();
 
             int num_fds = epoll_wait(epoll_fd, static_cast<epoll_event*>(events), MAX_EVENTS, 1000);
@@ -257,6 +249,14 @@ namespace scinit {
     }
 
     void ProcessHandler::start_programs() {
+        for (auto& child : all_objs) {
+            if (auto ptr = child.lock()) {
+                ptr->notify_of_state(obj_for_id);
+            } else {
+                LOG->warn("Free'd child in child list!");
+            }
+        }
+
         for (const auto& weak_program : all_objs) {
             if (auto program = weak_program.lock()) {
                 if (!program->can_start_now()) {
