@@ -18,7 +18,7 @@
 export LANG=C
 set -e
 
-if [ ! -f README ] ; then
+if [ ! -f README.md ] ; then
     # Were in build, go one up!
     cd ..
 fi
