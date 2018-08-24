@@ -118,13 +118,7 @@ jobs:
             ln -s libyaml-cpp.so.0.5.2 libyaml-cpp.so.0.5
       - run:
           name: Run smoke test
-          command: cd build && make smoke-cover
-      - run:
-          name: Upload coverage results
-          command: |
-            cd build && \
-            cp smoke-cover.info coverage.info && \
-            bash <(curl -s https://codecov.io/bash)
+          command: sudo .circleci/smoke-test.sh
 workflows:
   version: 2
   debian:
