@@ -41,6 +41,11 @@ if(CMAKE_COMPILER_IS_GNUCXX)
             EXECUTABLE make test
             DEPENDENCIES issue_reproducers
     )
+    SETUP_TARGET_FOR_COVERAGE_LCOV(
+            NAME smoke-cover
+            EXECUTABLE sudo ../.circleci/smoke-test.sh
+            DEPENDENCIES issue_reproducers
+    )
 endif()
 
 include(GoogleTest)

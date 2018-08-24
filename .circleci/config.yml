@@ -97,6 +97,7 @@ jobs:
           cd build && \
           touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
           chmod -R 777 /tmp/build/build && \
+          make -j4 && \
           make cover && \
           cp cover.info coverage.info
     - run:
@@ -116,12 +117,14 @@ jobs:
             ln -s libstdc++.so.6.0.22 libstdc++.so.6 && \
             ln -s libyaml-cpp.so.0.5.2 libyaml-cpp.so.0.5
       - run:
-          name: Load smoke test config
-          command: |
-            cp .circleci/smoke-test-config.yml config.yml
-      - run:
           name: Run smoke test
-          command: sudo .circleci/smoke-test.sh
+          command: cd build && make smoke-cover
+      - run:
+          name: Upload coverage results
+          command: |
+            cd build && \
+            cp smoke-cover.info coverage.info && \
+            bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
   debian:
