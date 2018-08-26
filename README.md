@@ -3,27 +3,33 @@
 [![Codecov status](https://img.shields.io/codecov/c/github/uubk/scinit/master.svg?style=popout)](https://codecov.io/gh/uubk/scinit)
 ![License](https://img.shields.io/github/license/uubk/scinit.svg?style=popout)
 
-A small init daemon for containers. Supervises multiple processes (optionally restarting
-them), forwards signals and handles capabilities.
+A small init daemon for containers. Supervises multiple processes (optionally
+restarting them), forwards signals and handles capabilities.
 
 ## Why would I need this?
-Because in some environments, it might not be desireable to only run a single, non-root
-process per container. Some services might need eleveated permissions (e.g. `CAP_NET_RAW`)
-and maybe you have another deployment option besides Kubernetes that you need to support,
-so splitting every app into multiple containers is just not possible.
+Because in some environments, it might not be desireable to only run a single,
+non-root process per container. Some services might need eleveated permissions
+(e.g. `CAP_NET_RAW`) and maybe you have another deployment option besides
+Kubernetes that you need to support, so splitting every app into multiple
+containers is just not possible.
 
 ## Building
-You'll need CMake, libcap2, Boost::Program_Options, Boost::Signals2, Boost::Filesysten
-and yaml-cpp (and libutil and pthreads which should already be installed). On Debian:
-`apt install libcap-dev libyaml-cpp-dev libboost-all-dev cmake`. Afterwards, it's
+You'll need CMake, libcap2, Boost::Program_Options, Boost::Signals2,
+Boost::Filesysten and yaml-cpp (and libutil and pthreads which should already be
+installed). Additionaly, if you build in debug mode (which is the default),
+you'll need lcov. On Debian:
+`apt install libcap-dev libyaml-cpp-dev libboost-all-dev cmake`. Afterwards,
+it's
 ```
 mkdir build
 cd build
 cmake ..
 make -j<nprocs>
 ```
-If you like, you can additionally install clang, clang-tidy and clang-format to format
-the code and give you feedback, which is useful if you'd like to contribute patches.
+Other targets:
+  * `make format`: If you like, you can additionally install clang, clang-tidy and clang-format to format the code and give you feedback, which is useful if you'd like to contribute patches.
+  * `make check` will run the test suite, skipping cases that require root
+  * `make cover` will run the test suite, using `lcov` to generate a readable coverage report.
 
 ## How to use
 You'll need to create a cinit configuration, a sample is shown below.:
@@ -40,10 +46,11 @@ programs:
     capabilities:
       - CAP_NET_RAW
 ```
-The configuration(YAML) consists of a program element followed by an array of programs.
-In the example above, this would start a `./ping -c 4 google.ch` a single time (`type: onshot`) as
-`nobody:nogroup` and grant it `CAP_NET_RAW` so that it works without root privileges.
-The only mandatory options from this example are `name` and `path`. Other options are:
+The configuration(YAML) consists of a program element followed by an array of
+programs. In the example above, this would start a `./ping -c 4 google.ch` a
+single time (`type: oneshot`) as `nobody:nogroup` and grant it `CAP_NET_RAW` so
+that it works without root privileges. The only mandatory options from this
+example are `name` and `path`. Other options are:
 
 * `user`/`group` These work like uid/gid, except with names. If you specify both numeric options and strings, the strings will take precedence
 * `pty` Can be set to `true` to expose a pseudo-TTY to a child process instead of pipes.
@@ -52,7 +59,7 @@ The only mandatory options from this example are `name` and `path`. Other option
 
 ### Invocation
 ```
-src/scinit --help 
+src/scinit --help
 Options:
   --help                     print this message
   --config arg (=config.yml) path to config file
@@ -62,7 +69,9 @@ Options:
 
 
 ## Dependencies
-This project depends on [gtest+gmock](https://github.com/google/googletest), 
-[spdlog](https://github.com/gabime/spdlog) and [inja](https://github.com/uubk/inja),
-which are pulled in via submodules. Additionally, CMake's `GoogleTest` module is 
-included for compatibility with earlier CMake versions. For coverage, we pull in Lars Bilke's [CodeCoverage](https://github.com/bilke/cmake-modules/blob/add62f1ebc5412e9eb3b846f73770f7ea31440e9/CodeCoverage.cmake) module.
+This project depends on [gtest+gmock](https://github.com/google/googletest),
+[spdlog](https://github.com/gabime/spdlog) and
+[inja](https://github.com/uubk/inja), which are pulled in via submodules.
+Additionally, CMake's `GoogleTest` module is included for compatibility with
+earlier CMake versions. For coverage, we pull in Lars Bilke's
+[CodeCoverage](https://github.com/bilke/cmake-modules/blob/add62f1ebc5412e9eb3b846f73770f7ea31440e9/CodeCoverage.cmake) module.
