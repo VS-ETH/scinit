@@ -33,7 +33,7 @@ namespace scinit {
     // See base class for documentation
     class ChildProcess : public ChildProcessInterface {
       public:
-        ChildProcess(std::string, std::string, std::list<std::string>, const std::string &, std::list<std::string>,
+        ChildProcess(std::string, std::string, std::list<std::string>, std::string, std::list<std::string>,
                      unsigned int, unsigned int, unsigned int, const std::shared_ptr<ProcessHandlerInterface> &,
                      std::list<std::string>, std::list<std::string>, bool, bool, std::list<std::string>,
                      std::list<std::pair<std::string, std::string>>);
@@ -80,7 +80,8 @@ namespace scinit {
         FRIEND_TEST(ConfigParserTests, ConfigWithNamedUser);
         FRIEND_TEST(ConfigParserTests, ComplexEnvConfig);
         FRIEND_TEST(ProcessLifecycleTests, SingleProcessLifecycle);
-        FRIEND_TEST(ProcessLifecycleTests, TwoDependantProcessesLifecycle);
+        FRIEND_TEST(ProcessLifecycleTests, TwoDependantOneshotProcessesLifecycle);
+        FRIEND_TEST(ProcessLifecycleTests, TwoDependantSimpleProcessesLifecycle);
         FRIEND_TEST(IntegrationTests, TestStdOutErr);
         FRIEND_TEST(IntegrationTests, TestPty);
         FRIEND_TEST(IntegrationTests, TestPrivDrop);

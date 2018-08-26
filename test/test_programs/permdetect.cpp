@@ -15,37 +15,34 @@
  */
 
 #include <fcntl.h>
+#include <grp.h>
+#include <pwd.h>
 #include <unistd.h>
 #include <fstream>
 #include <iostream>
 
 int main(int, char**) {
-    /*auto uid = getuid(), euid = geteuid(), gid = getgid(), egid = getegid();
+    auto uid = getuid(), euid = geteuid(), gid = getgid(), egid = getegid();
 
-    if (uid != euid || uid != 65534) {
-        std::cerr << "Wrong user" << std:: endl;
+    auto nogroup = getgrnam("nogroup");
+    if (!nogroup) {
+        std::cerr << "Couldn't read group" << std::endl;
         return -1;
     }
-    if (gid != egid || gid != 65534) {
-        std::cerr << "Wrong group" << std:: endl;
+    auto nobody = getpwnam("nobody");
+    if (!nobody) {
+        std::cerr << "Couldn't read user" << std::endl;
         return -1;
     }
-    std::cout << "User/group ok" << std::endl;*/
 
-    // Try to open /proc/self/fd/1, aka stdout. This will only work if permissions on the terminal have been set
-    // correctly
-    try {
-        auto fd = fopen("/proc/self/fd/1", "w");
-        if (fd == nullptr) {
-            std::cerr << "Couldn't open FD!" << std::endl;
-            return -1;
-        }
-        fprintf(fd, "Test via FD\n");
-        fclose(fd);
-        std::cout << "Test via stream" << std::endl;
-    } catch (...) {
-        std::cerr << "Couldn't open FD!" << std::endl;
+    if (uid != euid || uid != nobody->pw_uid) {
+        std::cerr << "Wrong user" << std::endl;
         return -1;
     }
+    if (gid != egid || gid != nogroup->gr_gid) {
+        std::cerr << "Wrong group" << std::endl;
+        return -1;
+    }
+    std::cout << "User/group ok" << std::endl;
     return 0;
 }

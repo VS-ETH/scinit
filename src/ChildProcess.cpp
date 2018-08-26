@@ -34,7 +34,7 @@
 #include "log.h"
 
 namespace scinit {
-    ChildProcess::ChildProcess(std::string name, std::string path, std::list<std::string> args, const std::string& type,
+    ChildProcess::ChildProcess(std::string name, std::string path, std::list<std::string> args, std::string type,
                                std::list<std::string> capabilities, unsigned int uid, unsigned int gid,
                                unsigned int graph_id, const std::shared_ptr<ProcessHandlerInterface>& handler,
                                std::list<std::string> before, std::list<std::string> after, bool want_tty,
@@ -43,12 +43,9 @@ namespace scinit {
       : name(std::move(name)), path(std::move(path)), args(std::move(args)), capabilities(std::move(capabilities)),
         uid(uid), gid(gid), graph_id(graph_id), handler(handler), before(std::move(before)), after(std::move(after)),
         want_tty(want_tty), want_default_env(want_default_env), env_extra_vars(std::move(env_extra_vars)) {
-        if (this->before.empty() && this->after.empty()) {
-            this->state = READY;
-        } else {
-            this->state = BLOCKED;
-        }
+        this->state = BLOCKED;
 
+        std::transform(type.begin(), type.end(), type.begin(), ::tolower);
         if (type == "simple") {
             this->type = SIMPLE;
         } else {
@@ -399,11 +396,11 @@ namespace scinit {
                 if (auto ref = weak_ref.lock()) {
                     if (ref->get_name() == dependency) {
                         if (other_or_this) {
-                            ref->should_wait_for(classref->graph_id,
-                                                 classref->type == SIMPLE ? ProcessState::DONE : ProcessState::RUNNING);
+                            ref->should_wait_for(classref->graph_id, classref->type == ONESHOT ? ProcessState::DONE :
+                                                                                                 ProcessState::RUNNING);
                         } else {
                             classref->should_wait_for(
-                              ref->get_id(), classref->type == SIMPLE ? ProcessState::DONE : ProcessState::RUNNING);
+                              ref->get_id(), classref->type == ONESHOT ? ProcessState::DONE : ProcessState::RUNNING);
                         }
                     }
                 }
@@ -413,6 +410,9 @@ namespace scinit {
         std::for_each(after.begin(), after.end(), [&func](auto arg) { func(arg, false); });
         before.clear();
         after.clear();
+        if (conditions.empty()) {
+            state = READY;
+        }
     }
 
     ChildProcessInterface::ProcessState ChildProcess::get_state() const noexcept { return state; }
@@ -431,9 +431,12 @@ namespace scinit {
                   }
                   if (auto ptr = other_procs[condition.first].lock()) {
                       auto retval = ptr->get_state() != condition.second;
-                      if (!retval) {
-                          LOG->debug("Condition {0} not in state {1} fulfilled with state {2}", ptr->get_name(),
-                                     condition.second, ptr->get_state());
+                      if (retval) {
+                          LOG->debug("Condition: Process {0} is now in state {1} (not in state {2})", ptr->get_name(),
+                                     ptr->get_state(), condition.second);
+                      } else {
+                          LOG->debug("Condition: Process {0} is now in state {1} (fulfilled)", ptr->get_name(),
+                                     ptr->get_state());
                       }
                       return retval;
                   }

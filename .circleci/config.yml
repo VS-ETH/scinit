@@ -1,11 +1,34 @@
 defaults: &defaults
   working_directory: /tmp/build
   docker:
-    - image: uubk/scinit-build:latest
+    - image: uubk/scinit-build:debian
+
+defaults-ubuntu: &defaults-ubuntu
+  working_directory: /tmp/build
+  docker:
+  - image: uubk/scinit-build:ubuntu
 
 version: 2
 jobs:
-  build:
+  build-check-ubuntu:
+    <<: *defaults-ubuntu
+    steps:
+    - checkout
+    - run:
+        name: checkout submodules
+        command: git submodule update --init
+    - run:
+        name: Fail on clang-tidy warnings
+        command: |
+          sed "s/WarningsAsErrors: ''/WarningsAsErrors: '*'/g" -i .clang-tidy && \
+          cat .clang-tidy | grep WarningsAsErrors
+    - run:
+        name: build
+        command: |
+          mkdir build && cd build && cmake .. && make -j4 &&
+          touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+          chmod -R 777 /tmp/build/build && make test
+  build-debian:
     <<: *defaults
     steps:
       - checkout
@@ -38,7 +61,7 @@ jobs:
           root: build
           paths:
             - "*"
-  unit-tests:
+  unit-tests-debian:
       <<: *defaults
       steps:
       - checkout
@@ -49,15 +72,38 @@ jobs:
           command: |
             mkdir -p unittests/tests && \
             cd build && \
+            touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+            chmod -R 777 /tmp/build/build && \
             export GTEST_OUTPUT="xml:/tmp/build/unittests/test/" && \
-            for i in $(echo test/*_tests) ; do $i --gtest_filter=-IntegrationTests.TestPrivDrop ; done && \
+            for i in $(echo test/*_tests) ; do $i ; done && \
             cd /tmp/build/unittests/test && \
             for i in * ; do export DIR=$(echo $i|sed 's/_tests.xml//g') && mkdir ../$DIR ; cp $i ../$DIR ; done && \
             cd .. && \
             rm -Rf test
       - store_test_results:
           path: /tmp/build/unittests
-  smoke-test:
+  coverage-debian:
+    <<: *defaults
+    steps:
+    - checkout
+    - attach_workspace:
+        at: /tmp/build/build
+    - run:
+        name: checkout submodules
+        command: git submodule update --init
+    - run:
+        name: Check coverage
+        command: |
+          cd build && \
+          touch test/CMakeFiles/permdetect.dir/test_programs/permdetect.cpp.gcda && \
+          chmod -R 777 /tmp/build/build && \
+          make -j4 && \
+          make cover && \
+          cp cover.info coverage.info
+    - run:
+        name: Upload coverage
+        command: bash <(curl -s https://codecov.io/bash)
+  smoke-test-debian:
     machine: true
     working_directory: /tmp/build
     steps:
@@ -71,20 +117,22 @@ jobs:
             ln -s libstdc++.so.6.0.22 libstdc++.so.6 && \
             ln -s libyaml-cpp.so.0.5.2 libyaml-cpp.so.0.5
       - run:
-          name: Load smoke test config
-          command: |
-            cp .circleci/smoke-test-config.yml config.yml
-      - run:
           name: Run smoke test
           command: sudo .circleci/smoke-test.sh
 workflows:
   version: 2
-  build-and-test:
+  debian:
     jobs:
-      - build
-      - unit-tests:
+      - build-debian
+      - unit-tests-debian:
           requires:
-            - build
-      - smoke-test:
+            - build-debian
+      - smoke-test-debian:
           requires:
-            - build
+            - build-debian
+      - coverage-debian:
+          requires:
+            - build-debian
+  ubuntu:
+    jobs:
+      - build-check-ubuntu

@@ -93,8 +93,8 @@ namespace scinit {
 
         expect_normal_run_for_child(child_1, handler, 0);
 
-        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::READY);
         handler->register_processes(all_children);
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::READY);
         handler->start_programs();
         EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::RUNNING);
         EXPECT_EQ(handler->number_of_running_procs, 1);
@@ -104,7 +104,7 @@ namespace scinit {
         EXPECT_EQ(handler->number_of_running_procs, 0);
     }
 
-    TEST_F(ProcessLifecycleTests, TwoDependantProcessesLifecycle) {
+    TEST_F(ProcessLifecycleTests, TwoDependantSimpleProcessesLifecycle) {
         auto handler = std::make_shared<ProcessHandler>();
 
         std::list<std::string> args, capabilities, child_1_before, child_1_after, child_2_before, child_2_after,
@@ -131,6 +131,7 @@ namespace scinit {
         child_1->notify_of_state(handler->obj_for_id);
         child_2->notify_of_state(handler->obj_for_id);
 
+        // Child 1 blocked on 2, child 2 should be able to start and run
         EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::READY);
         EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::BLOCKED);
         handler->register_processes(all_children);
@@ -140,15 +141,75 @@ namespace scinit {
         EXPECT_EQ(handler->number_of_running_procs, 1);
         child_1->notify_of_state(handler->obj_for_id);
         child_2->notify_of_state(handler->obj_for_id);
-        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::READY);
+        // Child 2 should now be able to run as child 2 is 'SIMPLE'
         EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::RUNNING);
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::READY);
         handler->start_programs();
         EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::RUNNING);
         EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::RUNNING);
         EXPECT_EQ(handler->number_of_running_procs, 2);
-
         handler->sigchld_received(0, 0);
         handler->sigchld_received(1, 0);
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::DONE);
+        EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::DONE);
+        EXPECT_EQ(handler->number_of_running_procs, 0);
+    }
+
+    TEST_F(ProcessLifecycleTests, TwoDependantOneshotProcessesLifecycle) {
+        auto handler = std::make_shared<ProcessHandler>();
+
+        std::list<std::string> args, capabilities, child_1_before, child_1_after, child_2_before, child_2_after,
+          env_whitelist;
+        std::list<std::pair<std::string, std::string>> env_extra_vars;
+        child_2_before.emplace_back("mockprocA");
+        child_1_after.emplace_back("mockprocB");
+        auto child_1 = std::make_shared<MockChildProcess>("mockprocA", "/bin/false", args, "ONESHOT", capabilities,
+                                                          65534, 65534, 0, handler, child_1_before, child_1_after,
+                                                          false, true, env_whitelist, env_extra_vars);
+        auto child_2 = std::make_shared<MockChildProcess>("mockprocB", "/bin/false", args, "ONESHOT", capabilities,
+                                                          65534, 65534, 1, handler, child_2_before, child_2_after,
+                                                          false, true, env_whitelist, env_extra_vars);
+        handler->obj_for_id[0] = child_1;
+        handler->obj_for_id[1] = child_2;
+        std::list<std::weak_ptr<ChildProcessInterface>> all_children;
+        all_children.emplace_back(child_1);
+        all_children.emplace_back(child_2);
+
+        expect_normal_run_for_child(child_1, handler, 0);
+        expect_normal_run_for_child(child_2, handler, 1);
+        child_1->propagate_dependencies(all_children);
+        child_2->propagate_dependencies(all_children);
+        child_1->notify_of_state(handler->obj_for_id);
+        child_2->notify_of_state(handler->obj_for_id);
+
+        // Child 1 blocked on 2, child 2 should be able to start and run
+        EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::READY);
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::BLOCKED);
+        handler->register_processes(all_children);
+        handler->start_programs();
+        EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::RUNNING);
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::BLOCKED);
+        EXPECT_EQ(handler->number_of_running_procs, 1);
+        child_1->notify_of_state(handler->obj_for_id);
+        child_2->notify_of_state(handler->obj_for_id);
+        // Child 1 should still be blocked as child 2 is 'ONESHOT'
+        EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::RUNNING);
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::BLOCKED);
+        // Let's exit child 2
+        handler->sigchld_received(1, 0);
+        EXPECT_EQ(handler->number_of_running_procs, 0);
+        EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::DONE);
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::BLOCKED);
+        // Propagate state, child 1 should now be able to run
+        child_1->notify_of_state(handler->obj_for_id);
+        child_2->notify_of_state(handler->obj_for_id);
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::READY);
+        EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::DONE);
+        handler->start_programs();
+        EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::RUNNING);
+        EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::DONE);
+        EXPECT_EQ(handler->number_of_running_procs, 1);
+        handler->sigchld_received(0, 0);
         EXPECT_EQ(child_1->state, ChildProcessInterface::ProcessState::DONE);
         EXPECT_EQ(child_2->state, ChildProcessInterface::ProcessState::DONE);
         EXPECT_EQ(handler->number_of_running_procs, 0);

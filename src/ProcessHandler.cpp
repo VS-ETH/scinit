@@ -33,6 +33,13 @@
 namespace scinit {
     void ProcessHandler::register_processes(std::list<std::weak_ptr<ChildProcessInterface>>& refs) {
         this->all_objs = refs;
+        for (auto& child : all_objs) {
+            if (auto ptr = child.lock()) {
+                ptr->propagate_dependencies(all_objs);
+            } else {
+                LOG->warn("Free'd child in child list!");
+            }
+        }
     }
 
     void ProcessHandler::register_for_process_state(
@@ -53,6 +60,11 @@ namespace scinit {
         if (signal == SIGCHLD) {
             // Already handled with waitpid
         } else {
+            // Shell children sometimes do not handle SIGINT correctly when not connected to a PTY. Work around this
+            // by always converting SIGINT to SIGTERM.
+            if (signal == SIGINT) {
+                signal = SIGTERM;
+            }
             // Forward signal
             for (auto pair : id_for_pid) {
                 LOG->debug("Forwarding signal {0} to pid {1}", signal, pair.first);
@@ -139,6 +151,22 @@ namespace scinit {
                 LOG->critical("Couldn't remove child file descriptor from epoll, aborting!");
                 throw ProcessHandlerException();
             }
+            // Clean up process if necessary
+            auto id = id_for_fd[fd];
+            id_for_fd.erase(fd);
+            fd_type.erase(fd);
+            num_fd_for_id[id] = num_fd_for_id[id] - 1;
+
+            if (num_fd_for_id[id] == 0) {
+                // No FD references this process anymore -> delete it
+                if (auto proc = obj_for_id[id].lock()) {
+                    LOG->debug("Process {0} lost last FD, deleting it from lists!", proc->get_name());
+                    // TODO(uubk): When implementing restarts, reset the process object right here
+                } else {
+                    LOG->critical("Couldn't remove child file descriptor from epoll, aborting!");
+                    throw ProcessHandlerException();
+                }
+            }
         } else {
             LOG->critical("unknown event type ({0}), aborting!", event);
             throw ProcessHandlerException();
@@ -148,7 +176,7 @@ namespace scinit {
     void ProcessHandler::sigchld_received(int pid, int rc) {
         if (id_for_pid.count(pid) > 0) {
             // One of ours!
-            int id = id_for_pid[pid];
+            unsigned int id = id_for_pid[pid];
             if (auto ptr = obj_for_id[id].lock()) {
                 if (rc == 0) {
                     LOG->info("Child {0} (PID {1}) exitted with RC {2}", ptr->get_name(), pid, rc);
@@ -160,7 +188,9 @@ namespace scinit {
                               rc);
             }
             number_of_running_procs--;
+            // Notify child process of exit
             (*sig_for_id[id])(EXIT, rc);
+            id_for_pid.erase(pid);
         } else {
             LOG->info("Reaped zombie (PID {0}) with RC {1}", pid, rc);
         }
@@ -168,27 +198,12 @@ namespace scinit {
 
     int ProcessHandler::enter_eventloop() {
         setup_signal_handlers();
-        for (auto& child : all_objs) {
-            if (auto ptr = child.lock()) {
-                ptr->propagate_dependencies(all_objs);
-                ptr->notify_of_state(obj_for_id);
-            } else {
-                LOG->warn("Free'd child in child list!");
-            }
-        }
         start_programs();
 
         // Everything is set up, now we only need to wait for events
         LOG->debug("Entering main event loop");
         struct epoll_event events[MAX_EVENTS];
         while (true) {
-            for (auto& child : all_objs) {
-                if (auto ptr = child.lock()) {
-                    ptr->notify_of_state(obj_for_id);
-                } else {
-                    LOG->warn("Free'd child in child list!");
-                }
-            }
             start_programs();
 
             int num_fds = epoll_wait(epoll_fd, static_cast<epoll_event*>(events), MAX_EVENTS, 1000);
@@ -203,8 +218,7 @@ namespace scinit {
             if (num_fds > 0) {
                 for (int i = 0; i < num_fds; i++) {
                     auto event = events[i];
-                    int eventnum = event.events;
-                    LOG->debug("Event: {0}", eventnum);
+                    LOG->debug("Event number {0}, FD: {1}, Event: {2}", i, event.data.fd, event.events);
                     event_received(event.data.fd, event.events);
                 }
             }
@@ -257,6 +271,14 @@ namespace scinit {
     }
 
     void ProcessHandler::start_programs() {
+        for (auto& child : all_objs) {
+            if (auto ptr = child.lock()) {
+                ptr->notify_of_state(obj_for_id);
+            } else {
+                LOG->warn("Free'd child in child list!");
+            }
+        }
+
         for (const auto& weak_program : all_objs) {
             if (auto program = weak_program.lock()) {
                 if (!program->can_start_now()) {
@@ -271,6 +293,7 @@ namespace scinit {
                     LOG->info("Starting: {0}", program->get_name());
                     program->do_fork(id_for_pid);
                     program->register_with_epoll(epoll_fd, id_for_fd, fd_type);
+                    num_fd_for_id[program->get_id()] = 2;
                     number_of_running_procs++;
                 } catch (std::exception& e) { LOG->critical("Couldn't start program: {0}", e.what()); }
             } else {
