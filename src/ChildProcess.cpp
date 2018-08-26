@@ -432,11 +432,11 @@ namespace scinit {
                   if (auto ptr = other_procs[condition.first].lock()) {
                       auto retval = ptr->get_state() != condition.second;
                       if (retval) {
-                          LOG->debug("Process {0} Condition {1} not in state {2} fulfilled with state {3}",
-                                     ptr->get_name(), ptr->get_state(), condition.second, ptr->get_state());
-                      } else {
-                          LOG->debug("Process {0} Condition {1} now in state {2} (fulfilled)", ptr->get_name(),
+                          LOG->debug("Condition: Process {0} is now in state {1} (not in state {2})", ptr->get_name(),
                                      ptr->get_state(), condition.second);
+                      } else {
+                          LOG->debug("Condition: Process {0} is now in state {1} (fulfilled)", ptr->get_name(),
+                                     ptr->get_state());
                       }
                       return retval;
                   }

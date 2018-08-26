@@ -60,6 +60,11 @@ namespace scinit {
         if (signal == SIGCHLD) {
             // Already handled with waitpid
         } else {
+            // Shell children sometimes do not handle SIGINT correctly when not connected to a PTY. Work around this
+            // by always converting SIGINT to SIGTERM.
+            if (signal == SIGINT) {
+                signal = SIGTERM;
+            }
             // Forward signal
             for (auto pair : id_for_pid) {
                 LOG->debug("Forwarding signal {0} to pid {1}", signal, pair.first);
@@ -146,6 +151,22 @@ namespace scinit {
                 LOG->critical("Couldn't remove child file descriptor from epoll, aborting!");
                 throw ProcessHandlerException();
             }
+            // Clean up process if necessary
+            auto id = id_for_fd[fd];
+            id_for_fd.erase(fd);
+            fd_type.erase(fd);
+            num_fd_for_id[id] = num_fd_for_id[id] - 1;
+
+            if (num_fd_for_id[id] == 0) {
+                // No FD references this process anymore -> delete it
+                if (auto proc = obj_for_id[id].lock()) {
+                    LOG->debug("Process {0} lost last FD, deleting it from lists!", proc->get_name());
+                    // TODO(uubk): When implementing restarts, reset the process object right here
+                } else {
+                    LOG->critical("Couldn't remove child file descriptor from epoll, aborting!");
+                    throw ProcessHandlerException();
+                }
+            }
         } else {
             LOG->critical("unknown event type ({0}), aborting!", event);
             throw ProcessHandlerException();
@@ -169,23 +190,7 @@ namespace scinit {
             number_of_running_procs--;
             // Notify child process of exit
             (*sig_for_id[id])(EXIT, rc);
-            // Remove PID from our list
             id_for_pid.erase(pid);
-            // Remove from FD lists
-            std::list<int> fds;
-            for (auto id_fd_par : id_for_fd) {
-                if (id_fd_par.second == id) {
-                    fds.push_back(id_fd_par.first);
-                }
-            }
-            if (fds.size() != 2) {
-                LOG->warn("Expected to remove two FDs but only found {0}", fds.size());
-            }
-            for (auto fd : fds) {
-                // TODO(uubk): Unregister from epoll socket to save resources
-                id_for_fd.erase(fd);
-                fd_type.erase(fd);
-            }
         } else {
             LOG->info("Reaped zombie (PID {0}) with RC {1}", pid, rc);
         }
@@ -213,8 +218,7 @@ namespace scinit {
             if (num_fds > 0) {
                 for (int i = 0; i < num_fds; i++) {
                     auto event = events[i];
-                    int eventnum = event.events;
-                    LOG->debug("Event: {0}", eventnum);
+                    LOG->debug("Event number {0}, FD: {1}, Event: {2}", i, event.data.fd, event.events);
                     event_received(event.data.fd, event.events);
                 }
             }
@@ -289,6 +293,7 @@ namespace scinit {
                     LOG->info("Starting: {0}", program->get_name());
                     program->do_fork(id_for_pid);
                     program->register_with_epoll(epoll_fd, id_for_fd, fd_type);
+                    num_fd_for_id[program->get_id()] = 2;
                     number_of_running_procs++;
                 } catch (std::exception& e) { LOG->critical("Couldn't start program: {0}", e.what()); }
             } else {

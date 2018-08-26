@@ -60,6 +60,7 @@ namespace scinit {
         std::map<unsigned int, std::weak_ptr<ChildProcessInterface>> obj_for_id;
         std::map<int, unsigned int> id_for_pid;
         std::map<int, unsigned int> id_for_fd;
+        std::map<unsigned int, unsigned int> num_fd_for_id;
         std::map<int, ProcessHandlerInterface::FDType> fd_type;
         std::list<std::weak_ptr<ChildProcessInterface>> all_objs;
         int epoll_fd = -1, signal_fd = -1, number_of_running_procs = 0;
