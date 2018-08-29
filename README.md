@@ -1,7 +1,7 @@
 # scinit
-[![CircleCI status](https://img.shields.io/circleci/project/github/uubk/scinit/master.svg?style=shield)](https://circleci.com/gh/uubk/cinit/tree/master)
-[![Codecov status](https://img.shields.io/codecov/c/github/uubk/scinit/master.svg?style=popout)](https://codecov.io/gh/uubk/scinit)
-![License](https://img.shields.io/github/license/uubk/scinit.svg?style=popout)
+[![CircleCI status](https://img.shields.io/circleci/project/github/vs-eth/scinit/master.svg?style=shield)](https://circleci.com/gh/vs-eth/cinit/tree/master)
+[![Codecov status](https://img.shields.io/codecov/c/github/vs-eth/scinit/master.svg?style=popout)](https://codecov.io/gh/vs-eth/scinit)
+![License](https://img.shields.io/github/license/vs-eth/scinit.svg?style=popout)
 
 A small init daemon for containers. Supervises multiple processes (optionally
 restarting them), forwards signals and handles capabilities.
@@ -71,7 +71,7 @@ Options:
 ## Dependencies
 This project depends on [gtest+gmock](https://github.com/google/googletest),
 [spdlog](https://github.com/gabime/spdlog) and
-[inja](https://github.com/uubk/inja), which are pulled in via submodules.
+[inja](https://github.com/pantor/inja), which are pulled in via submodules.
 Additionally, CMake's `GoogleTest` module is included for compatibility with
 earlier CMake versions. For coverage, we pull in Lars Bilke's
 [CodeCoverage](https://github.com/bilke/cmake-modules/blob/add62f1ebc5412e9eb3b846f73770f7ea31440e9/CodeCoverage.cmake) module.
