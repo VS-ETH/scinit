@@ -32,7 +32,7 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_COMPILER_IS_GNUCXX AND CMAKE_BUILD_TYPE MATCHES Debug)
     include(CodeCoverage)
     APPEND_COVERAGE_COMPILER_FLAGS()
     set(COVERAGE_LCOV_EXCLUDES '/usr' '*/boost/*' '*c++*' '*/yaml-cpp/*' '*/3rdparty/*')
