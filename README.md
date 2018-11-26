@@ -1,7 +1,7 @@
 # scinit
-[![CircleCI status](https://img.shields.io/circleci/project/github/vs-eth/scinit/master.svg?style=shield)](https://circleci.com/gh/vs-eth/scinit/tree/master)
-[![Codecov status](https://img.shields.io/codecov/c/github/vs-eth/scinit/master.svg?style=popout)](https://codecov.io/gh/vs-eth/scinit)
-![License](https://img.shields.io/github/license/vs-eth/scinit.svg?style=popout)
+[![CircleCI status](https://img.shields.io/circleci/project/github/uubk/scinit/master.svg?style=shield)](https://circleci.com/gh/uubk/scinit/tree/master)
+[![Codecov status](https://img.shields.io/codecov/c/github/uubk/scinit/master.svg?style=popout)](https://codecov.io/gh/uubk/scinit)
+![License](https://img.shields.io/github/license/uubk/scinit.svg?style=popout)
 
 A small init daemon for containers. Supervises multiple processes (optionally
 restarting them), forwards signals and handles capabilities.
